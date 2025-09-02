@@ -5,7 +5,6 @@ import UploadSuccessAlert from "@/components/UploadSuccessAlert";
 import QRSection from "@/components/QRSection";
 import UploadForm from "@/components/UploadForm";
 import HeroSection from "@/components/HeroSection";
-import Head from "next/head";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -63,6 +62,8 @@ export default function Home() {
     }
 
     const { url, key, fileId } = await presignRes.json();
+    // needed to show the file name
+    console.log(key)
     if (!url) {
       setIsUploading(false);
       console.error("No presigned URL returned");
