@@ -4,7 +4,7 @@ const Footer = () => {
       Made with ❤️ by Anil ·{" "}
       <a
         className="underline"
-        href="https://github.com/yourrepo"
+        href="https://github.com/Anonymous961"
         target="_blank"
       >
         GitHub
