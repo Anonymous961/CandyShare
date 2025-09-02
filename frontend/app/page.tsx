@@ -104,9 +104,7 @@ export default function Home() {
         xhr.setRequestHeader("Content-Type", file.type);
         xhr.send(file);
       });
-      console.log("helllo 2")
     } catch (err) {
-      console.log("reached here")
       setIsUploading(false);
       console.error("Upload to presigned URL failed", err);
       return;
