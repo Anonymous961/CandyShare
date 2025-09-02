@@ -40,9 +40,9 @@ jobs:
             sudo docker stop candyshare-app || true
             sudo docker rm candyshare-app || true
             sudo docker run -d \
-            --name web-app \
-            -p 4000:4000 \
-            --restart=always \
-            --env-file /home/ubuntu/.env \
-            anonymous961/candyshare:latest \
-            sh -c "bunx prisma migrate deploy && bun index.ts"
+              --name candyshare-app \
+              -p 4000:4000 \
+              --restart=always \
+              --env-file /home/ubuntu/.env \
+              anonymous961/candyshare:latest \
+              sh -c "bunx prisma migrate deploy && bun index.ts"
