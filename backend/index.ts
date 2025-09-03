@@ -24,6 +24,16 @@ app.get("/health", (req, res) => {
     })
 })
 
+app.get("/debug/env", (req, res) => {
+    res.json({
+        DATABASE_URL: process.env.DATABASE_URL ? "set" : "missing",
+        AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID ? "set" : "missing",
+        AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY ? "set" : "missing",
+        AWS_BUCKET_NAME: process.env.AWS_BUCKET_NAME ? "set" : "missing",
+        AWS_REGION: process.env.AWS_REGION ? "set" : "missing"
+    })
+})
+
 app.listen(PORT, () => {
     console.log(`server is running on http://localhost:${PORT}`);
 })
