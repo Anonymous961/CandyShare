@@ -29,7 +29,7 @@ export async function getObjectUrl(key: string): Promise<string> {
     };
 
     const command = new GetObjectCommand(getObjectParams);
-    const url = await getSignedUrl(client, command, { expiresIn: 3600 });
+    const url = await getSignedUrl(client, command, { expiresIn: 15 * 60 }); // expires in 15 minutes
     return url;
 }
 
@@ -46,6 +46,6 @@ export async function getSignedUrlFromBucket(key: string, type: string): Promise
     };
 
     const command = new PutObjectCommand(getObjectParams);
-    const url = await getSignedUrl(client, command, { expiresIn: 3600 });
+    const url = await getSignedUrl(client, command, { expiresIn: 15 * 60 }); // expires in 15 minutes
     return url;
 }
