@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Footer from "@/components/Footer";
+import { Analytics } from "@vercel/analytics/next"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,34 +15,72 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Candy Share",
-  description:
-    "Upload a file and share it instantly via a secure link or QR code",
-  metadataBase: new URL("https://candyshare.anilpro.xyz"), // change to your domain
+  title: {
+    default: "Candy Share - Instant File Sharing with Secure Links",
+    template: "%s | Candy Share"
+  },
+  description: "Share files instantly with secure, temporary links and QR codes. Fast, private file sharing with end-to-end encryption. No registration required.",
+  keywords: ["file sharing", "secure file transfer", "temporary links", "QR code share", "instant upload", "cloud storage", "secure file sharing", "temporary file hosting"],
+  metadataBase: new URL("https://www.candyshare.xyz"),
+  authors: [{ name: "HackPack" }],
+  creator: "Candy Share",
+  publisher: "Candy Share",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  
+  // Open Graph
   openGraph: {
-    title: "Candy Share",
-    description:
-      "Upload a file and share it instantly via a secure link or QR code",
-    url: "https://candyshare.anilpro.xyz", // change to your domain
+    title: "Candy Share - Instant Secure File Sharing",
+    description: "Upload and share files instantly via secure temporary links or QR codes. Fast, private, and no registration required.",
+    url: "https://www.candyshare.xyz",
     siteName: "Candy Share",
     images: [
       {
-        url: "/og-image.png", // Add a nice preview image here
+        url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Candy Share preview",
+        alt: "Candy Share - Secure instant file sharing with QR codes and temporary links",
       },
     ],
     locale: "en_US",
     type: "website",
   },
+
+  // Twitter
   twitter: {
     card: "summary_large_image",
-    title: "Candy Share",
-    description:
-      "Upload a file and share it instantly via a secure link or QR code",
-    images: ["/og-image.png"],
-    creator: "@anil.eth", // optional
+    title: "Candy Share - Instant Secure File Sharing",
+    description: "Share files instantly with secure temporary links and QR codes. Fast, private, and completely free.",
+    images: ["https://www.candyshare.xyz/og-image.png"],
+    creator: "@anil.eth",
+    site: "@candyshare_xyz", // Consider creating a Twitter handle
+  },
+
+  // Additional SEO enhancements
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  
+  // Verification (add these when you set up search console)
+  verification: {
+    google: "your-google-search-console-verification-code", // Add when available
+    yandex: "your-yandex-verification-code", // Optional
+  },
+
+  // Additional meta tags
+  alternates: {
+    canonical: "https://www.candyshare.xyz",
   },
 };
 
@@ -61,6 +100,7 @@ export default function RootLayout({
       >
         {children}
         <Footer />
+        <Analytics/>
       </body>
     </html>
   );
