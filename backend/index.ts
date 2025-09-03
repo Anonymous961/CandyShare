@@ -1,7 +1,7 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import cors from "cors"
 import handleFile from "./routes/handleFile";
-import expressStatusMonitor from 'express-status-monitor';
+// import expressStatusMonitor from 'express-status-monitor';
 import morgan from "morgan";
 
 const app = express();
@@ -42,26 +42,26 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(morgan(isProduction ? 'combined' : 'dev', {
     skip: (req, res) => req.path === '/health' // Skip health check logs
 }));
-if (!isProduction) {
-    app.use(expressStatusMonitor({
-        title: 'Candy Share API Status',
-        path: '/status',
-        spans: [
-            { interval: 1, retention: 60 }, // 1 minute intervals, keep 60 datapoints
-            { interval: 5, retention: 60 },
-            { interval: 15, retention: 60 }
-        ],
-        healthChecks: [
-            {
-                protocol: 'http',
-                host: 'localhost',
-                path: '/health',
-                port: PORT.toString()
-            }
-        ],
-        ignoreStartsWith: '/status' // Don't monitor the status page itself
-    }));
-}
+// if (!isProduction) {
+//     app.use(expressStatusMonitor({
+//         title: 'Candy Share API Status',
+//         path: '/status',
+//         spans: [
+//             { interval: 1, retention: 60 }, // 1 minute intervals, keep 60 datapoints
+//             { interval: 5, retention: 60 },
+//             { interval: 15, retention: 60 }
+//         ],
+//         healthChecks: [
+//             {
+//                 protocol: 'http',
+//                 host: 'localhost',
+//                 path: '/health',
+//                 port: PORT.toString()
+//             }
+//         ],
+//         ignoreStartsWith: '/status' // Don't monitor the status page itself
+//     }));
+// }
 
 app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path !== '/health') {
