@@ -49,8 +49,8 @@ export default function UploadForm({
   };
 
   return (
-    <div className="flex flex-col justify-center max-w-md w-full space-y-4 min-h-80">
-      <Label>Upload File</Label>
+    <div className="flex flex-col justify-center max-w-md w-full space-y-4 min-h-80 p-2">
+      <Label className="text-black">Upload File</Label>
       <div
         onClick={() => !isUploading && inputRef.current?.click()}
         onDrop={handleDrop}

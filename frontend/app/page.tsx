@@ -5,6 +5,7 @@ import UploadSuccessAlert from "@/components/UploadSuccessAlert";
 import QRSection from "@/components/QRSection";
 import UploadForm from "@/components/UploadForm";
 import HeroSection from "@/components/HeroSection";
+import Header from "@/components/Header";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -48,7 +49,6 @@ export default function Home() {
           type: file.type,
         }),
       });
-      console.log("presigned",presignRes)
     } catch (err) {
       setIsUploading(false);
       console.error("Failed to get presigned URL", err);
@@ -118,9 +118,11 @@ export default function Home() {
   };
 
   return (
-    <>
+    <div className=" flex justify-center flex-col w-full max-w-5xl mx-auto  pb-2 md:px-0">
+      <Header/>
       <main className="mt-10 text-gray-100 flex items-center justify-center px-4 ">
-        <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl p-6 md:p-10 flex flex-col md:flex-row gap-10 md:gap-16 items-center justify-center">
+        <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl  md:p-10 flex flex-col md:flex-row gap-10 md:gap-16 items-center justify-center">
+
           <UploadForm
             onFileChange={handleChange}
             onUpload={handleUpload}
@@ -149,6 +151,6 @@ export default function Home() {
           🔗 Link copied to clipboard!
         </div>
       )}
-    </>
+    </div>
   );
 }

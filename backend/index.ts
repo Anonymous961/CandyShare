@@ -63,7 +63,7 @@ if (!isProduction) {
     }));
 }
 
-app.use((req, res, next) => {
+app.use((req: Request, res: Response, next: NextFunction) => {
     if (req.path !== '/health') {
         console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - IP: ${req.ip}`);
     }
