@@ -1,40 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import UploadSuccessAlert from "@/components/UploadSuccessAlert";
-import QRSection from "@/components/QRSection";
-import UploadForm from "@/components/UploadForm";
-import HeroSection from "@/components/HeroSection";
+import FileUploadCard from "@/components/FileUploadCard";
+import WelcomeCard from "@/components/WelcomeCard";
+import TierInfoSection from "@/components/TierInfoSection";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function Home() {
+  const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [fileId, setFileId] = useState<string | null>(null);
-  const [link, setLink] = useState<string>("");
   const [fileSize, setFileSize] = useState<string>("");
-  const [copied, setCopied] = useState<boolean>(false);
+  const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setFile(file);
-      setIsSuccess(false);
-      setProgress(0);
-      setFileSize((file.size / 1024).toFixed(2) + " KB");
+  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
+
+  // Auto-close success alert after 3 seconds
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setTimeout(() => {
+        setIsSuccess(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
     }
+  }, [isSuccess]);
+
+  const handleFileSelect = (selectedFile: File) => {
+    setFile(selectedFile);
+    setIsSuccess(false);
+    setUploadSuccess(false);
+    setProgress(0);
+    setFileSize((selectedFile.size / 1024).toFixed(2) + " KB");
   };
 
   const handleUpload = async () => {
     if (!file) return;
 
     setIsUploading(true);
-    setIsSuccess(false);
     setProgress(0);
+    setIsSuccess(false);
+    setUploadSuccess(false);
 
-    const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
     // 1. Request presigned URL from backend
     let presignRes;
     try {
@@ -47,8 +60,8 @@ export default function Home() {
           filename: file.name,
           size: file.size,
           type: file.type,
-          tier:"anonymous",
-          password:""
+          tier: "anonymous",
+          password: ""
         }),
       });
     } catch (err) {
@@ -63,9 +76,8 @@ export default function Home() {
       return;
     }
 
-    const { url, key, fileId } = await presignRes.json();
-    // needed to show the file name
-    console.log(key)
+    const { url, key, fileId, tier } = await presignRes.json();
+    
     if (!url) {
       setIsUploading(false);
       console.error("No presigned URL returned");
@@ -74,7 +86,6 @@ export default function Home() {
 
     // 2. Upload file to presigned URL
     try {
-      console.log("hello")
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.upload.onprogress = (event) => {
@@ -84,13 +95,34 @@ export default function Home() {
           }
         };
         xhr.onload = () => {
-          setIsUploading(false);
           if (xhr.status === 200 || xhr.status === 204) {
             setFileId(fileId);
             setIsSuccess(true);
-            setLink(
-              `${process.env.NEXT_PUBLIC_FRONTEND_URL}/download/${fileId}`
-            );
+            setUploadSuccess(true);
+            
+            // Store file data in localStorage for the results page
+            const fileData = {
+              id: fileId,
+              originalName: file.name,
+              size: file.size,
+              tier: "anonymous",
+              hasPassword: false,
+              expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+              downloadCount: 0
+            };
+            
+            try {
+              localStorage.setItem(`file_${fileId}`, JSON.stringify(fileData));
+              console.log("File data stored:", fileData); // Debug log
+            } catch (err) {
+              console.error("Failed to store file data:", err);
+            }
+            
+            // Redirect to results page after a short delay
+            // setTimeout(() => {
+              router.push(`/results/${fileId}`);
+            // }, 2000);
+            
             resolve();
           } else {
             console.error("Upload failed with status:", xhr.status);
@@ -98,7 +130,6 @@ export default function Home() {
           }
         };
         xhr.onerror = () => {
-          setIsUploading(false);
           console.error("Upload failed");
           reject(new Error("Upload failed"));
         };
@@ -107,52 +138,51 @@ export default function Home() {
         xhr.send(file);
       });
     } catch (err) {
-      setIsUploading(false);
       console.error("Upload to presigned URL failed", err);
-      return;
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  const handleCopy = async (txt: string) => {
-    await navigator.clipboard.writeText(txt);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
-  };
 
   return (
-    <div className=" flex justify-center flex-col w-full max-w-5xl mx-auto  pb-2 md:px-0">
-      <Header/>
-      <main className="mt-10 text-gray-100 flex items-center justify-center px-4 ">
-        <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl  md:p-10 flex flex-col md:flex-row gap-10 md:gap-16 items-center justify-center">
-
-          <UploadForm
-            onFileChange={handleChange}
-            onUpload={handleUpload}
-            isUploading={isUploading}
-            progress={progress}
-            fileName={file?.name}
-            fileSize={fileSize}
-          />
-          <div className="w-full md:w-1/2">
-            {fileId ? (
-              <QRSection link={link} handleCopy={handleCopy} />
-            ) : (
-              <HeroSection />
-            )}
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <Header />
+      
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto">
+          {!fileId ? (
+            // Upload Flow
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column - Upload */}
+              <div className="space-y-6">
+                <FileUploadCard
+                  onFileSelect={handleFileSelect}
+                  onUpload={handleUpload}
+                  file={file}
+                  isUploading={isUploading}
+                  progress={progress}
+                  uploadSuccess={uploadSuccess}
+                />
+              </div>
+              
+              {/* Right Column - Welcome */}
+              <div className="flex items-center">
+                <WelcomeCard />
+              </div>
+            </div>
+          ) : null}
         </div>
       </main>
 
+      {/* Tier Information Section */}
+      {!fileId && <TierInfoSection />}
+
+      {/* Success Notification */}
       {isSuccess && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
-          <UploadSuccessAlert />
-        </div>
+        <UploadSuccessAlert onClose={() => setIsSuccess(false)} />
       )}
-      {copied && (
-        <div className="fixed top-6 left-1/2 transform -translate-x-1/2 bg-gray-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity">
-          🔗 Link copied to clipboard!
-        </div>
-      )}
+      <Footer/>
     </div>
   );
 }

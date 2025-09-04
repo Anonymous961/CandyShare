@@ -1,9 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle, Lock, Download as DownloadIcon, ArrowLeft, Shield } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 
 export default function Download() {
   const params = useParams<{ id: string }>();
@@ -13,10 +16,13 @@ export default function Download() {
   const [needsPassword, setNeedsPassword] = useState(false); // ADD: password check
   const [isPasswordChecking, setIsPasswordChecking] = useState(false); // ADD: password checking state
   const [passwordError, setPasswordError] = useState(""); // ADD: password error state
+  const [countdown, setCountdown] = useState(5); // ADD: countdown timer
   const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
   
   // Initial check for password requirement
   useEffect(() => {
+    let countdownInterval: NodeJS.Timeout;
+    
     const checkPasswordRequirement = async () => {
       setIsDownloading(true);
       try {
@@ -31,15 +37,33 @@ export default function Download() {
         if (!res.ok) throw new Error("Failed to get file URL");
         const { url: downloadUrl } = await res.json();
         if (!downloadUrl) throw new Error("No URL returned");
-        // Trigger download
-        window.location.href = downloadUrl;
-        setIsDownloading(false);
+        
+        // Start countdown timer
+        countdownInterval = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev <= 1) {
+              clearInterval(countdownInterval);
+              window.location.href = downloadUrl;
+              setIsDownloading(false);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
       } catch (err) {
         setIsDownloading(false);
         console.error(err);
       }
     };
+    
     checkPasswordRequirement();
+    
+    // Cleanup function
+    return () => {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+      }
+    };
   }, [params.id, BACKEND_URL]);
 
   // Handle password form submission
@@ -74,90 +98,196 @@ export default function Download() {
 
   if (needsPassword) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white bg-gray-900 px-4">
-        <div className="bg-white p-8 rounded-lg shadow-lg text-black max-w-md w-full">
-          <h2 className="text-xl font-bold mb-4">Password Required</h2>
-          <p className="text-sm text-gray-600 mb-6">This file is password protected.</p>
-          
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <div className="relative">
-              <input
-                type="password"
-                placeholder="Enter password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setPasswordError(""); // Clear error when user types
-                }}
-                className={`border p-3 rounded w-full ${
-                  passwordError ? 'border-red-500' : 'border-gray-300'
-                } focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                disabled={isPasswordChecking}
-                autoFocus
-              />
-              {isPasswordChecking && (
-                <div className="absolute right-3 top-3">
-                  <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <Header />
+        
+        <main className="container mx-auto px-4 py-16">
+          <div className="max-w-md mx-auto">
+            <Card className="shadow-lg">
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                    <Lock className="w-8 h-8 text-red-600" />
+                  </div>
                 </div>
-              )}
+                <CardTitle className="text-2xl font-bold text-gray-900">
+                  Password Required
+                </CardTitle>
+                <CardDescription className="text-gray-600">
+                  This file is protected with a password. Please enter the password to download.
+                </CardDescription>
+              </CardHeader>
+              
+              <CardContent>
+                <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="password"
+                        placeholder="Enter the file password"
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setPasswordError("");
+                        }}
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                          passwordError 
+                            ? 'border-red-300 bg-red-50 focus:ring-red-500' 
+                            : 'border-gray-300 focus:border-blue-500'
+                        }`}
+                        disabled={isPasswordChecking}
+                        autoFocus
+                      />
+                      {isPasswordChecking && (
+                        <div className="absolute right-3 top-3">
+                          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {passwordError && (
+                      <p className="text-red-600 text-sm flex items-center gap-2">
+                        <Shield />
+                        {passwordError}
+                      </p>
+                    )}
+                  </div>
+                  
+                  <Button
+                    type="submit"
+                    disabled={!password.trim() || isPasswordChecking}
+                    className="w-full h-12 text-base font-medium"
+                    size="lg"
+                  >
+                    {isPasswordChecking ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                        Verifying...
+                      </>
+                    ) : (
+                      <>
+                        <DownloadIcon className="w-5 h-5 mr-2" />
+                        Download File
+                      </>
+                    )}
+                  </Button>
+                </form>
+                
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                    <Shield />
+                    <span>Your file is encrypted and secure</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <div className="mt-8 text-center">
+              <Button
+                variant="outline"
+                onClick={() => router.push("/")}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Home
+              </Button>
             </div>
-            
-            {passwordError && (
-              <p className="text-red-500 text-sm">{passwordError}</p>
-            )}
-            
-            <Button
-              type="submit"
-              disabled={!password.trim() || isPasswordChecking}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isPasswordChecking ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Checking...
-                </>
-              ) : (
-                'Download File'
-              )}
-            </Button>
-          </form>
-          
-          <p className="text-xs text-gray-500 mt-4 text-center">
-            Press Enter or click the button to download
-          </p>
-        </div>
+          </div>
+        </main>
+        
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-white bg-gray-900 px-4 text-center space-y-4">
-      {isDownloading ? (
-        <>
-          <Loader2 className="w-10 h-10 animate-spin text-gray-300 mb-4" />
-          <h1 className="text-xl font-semibold">Your file is getting ready</h1>
-          <p className="text-sm text-gray-400">
-            Redirecting you to the download in a few seconds...
-          </p>
-        </>
-      ) : (
-        <>
-          <CheckCircle className="w-10 h-10 text-green-400 mb-2" />
-          <h1 className="text-xl font-semibold">Downloading...</h1>
-          <p className="text-sm text-gray-400">
-            Your download should begin shortly.
-          </p>
-          <p className="text-sm text-gray-500 mt-4">
-            Thanks for using <span className="font-semibold">Candy Share</span>!
-          </p>
-          <Button
-            onClick={() => router.push("/")}
-            className="mt-2 bg-white text-black hover:bg-gray-200 transition"
-          >
-            Create another link
-          </Button>
-        </>
-      )}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <Header />
+      
+      <main className="container mx-auto px-4 py-16">
+        <div className="max-w-md mx-auto">
+          <Card className="shadow-lg">
+            <CardContent className="pt-8">
+              {isDownloading ? (
+                <div className="text-center space-y-6">
+                  <div className="flex justify-center">
+                    <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h1 className="text-2xl font-bold text-gray-900">
+                      Preparing Your File
+                    </h1>
+                    <p className="text-gray-600">
+                      We're getting your file ready for download...
+                    </p>
+                    <div className="flex items-center justify-center gap-2 mt-4">
+                      <span className="text-sm text-gray-500">Download starts in:</span>
+                      <span className="text-2xl font-bold text-blue-600">{countdown}</span>
+                      <span className="text-sm text-gray-500">seconds</span>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-blue-800 text-sm">
+                      <Shield />
+                      <span>Verifying file security and generating secure download link</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center space-y-6">
+                  <div className="flex justify-center">
+                    <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+                      <CheckCircle className="w-10 h-10 text-green-600" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h1 className="text-2xl font-bold text-gray-900">
+                      Download Started!
+                    </h1>
+                    <p className="text-gray-600">
+                      Your file download should begin automatically.
+                    </p>
+                  </div>
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div className="flex items-center gap-2 text-green-800 text-sm">
+                      <DownloadIcon />
+                      <span>If the download doesn't start, check your browser's download folder</span>
+                    </div>
+                  </div>
+                  <div className="pt-4 border-t border-gray-200">
+                    <p className="text-sm text-gray-500 mb-4">
+                      Thanks for using <span className="font-semibold text-gray-900">CandyShare</span>!
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                      <Button
+                        onClick={() => router.push("/")}
+                        className="flex items-center gap-2"
+                      >
+                        <DownloadIcon />
+                        Share Another File
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => window.close()}
+                        className="flex items-center gap-2"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                        Close
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+      
     </div>
   );
 }
