@@ -47,6 +47,8 @@ export default function Home() {
           filename: file.name,
           size: file.size,
           type: file.type,
+          tier:"anonymous",
+          password:""
         }),
       });
     } catch (err) {

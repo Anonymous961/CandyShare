@@ -1,6 +1,9 @@
 -- CreateEnum
 CREATE TYPE "public"."FileStatus" AS ENUM ('ACTIVE', 'EXPIRED', 'DELETED');
 
+-- CreateEnum
+CREATE TYPE "public"."TIER" AS ENUM ('ANONYMOUS', 'FREE', 'PRO');
+
 -- CreateTable
 CREATE TABLE "public"."User" (
     "id" TEXT NOT NULL,
@@ -24,6 +27,10 @@ CREATE TABLE "public"."File" (
     "expiresAt" TIMESTAMP(3) NOT NULL,
     "status" "public"."FileStatus" NOT NULL DEFAULT 'ACTIVE',
     "userId" TEXT,
+    "tier" "public"."TIER" NOT NULL DEFAULT 'ANONYMOUS',
+    "password" TEXT,
+    "downloadCount" INTEGER NOT NULL DEFAULT 0,
+    "lastDownloadedAt" TIMESTAMP(3),
 
     CONSTRAINT "File_pkey" PRIMARY KEY ("id")
 );
