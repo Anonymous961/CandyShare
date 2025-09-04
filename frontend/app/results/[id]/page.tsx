@@ -20,6 +20,7 @@ import {
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import QRCode from "qrcode";
+import Image from "next/image";
 
 interface FileData {
   id: string;
@@ -375,7 +376,7 @@ export default function ResultsPage() {
                 <div className="flex justify-center">
                   {qrCodeUrl ? (
                     <div className="p-4 bg-white rounded-lg border-2 border-gray-200">
-                      <img 
+                      <Image
                         src={qrCodeUrl} 
                         alt="QR Code" 
                         className="w-48 h-48"

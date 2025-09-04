@@ -77,6 +77,7 @@ export default function Home() {
     }
 
     const { url, key, fileId, tier } = await presignRes.json();
+    console.log(key,tier,fileSize)
     
     if (!url) {
       setIsUploading(false);

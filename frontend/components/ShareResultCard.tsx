@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Download, Share2, Check, ExternalLink } from "lucide-react";
+import { Copy,  Share2, Check, ExternalLink } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ShareResultCardProps {
