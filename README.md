@@ -1,133 +1,139 @@
+# CandyShare
 
+A simple file-sharing platform that lets you upload files and generate secure temporary links for sharing. Perfect for quickly sharing files without the need for accounts or complex setup.
 
-# 🍬 CandyShare
+## What it does
 
-A simple **file-sharing platform** that lets you upload files and generate temporary links for sharing. Built with **Express (Bun runtime)**, **Prisma (PostgreSQL)**, and **AWS S3** for object storage.
+CandyShare allows you to:
 
----
+- **Upload files** of any type and size
+- **Generate secure links** that expire automatically
+- **Share files instantly** with anyone via a simple URL
+- **Protect sensitive files** with optional password protection
+- **Track downloads** and access patterns
+- **No registration required** - start sharing immediately
 
-## ✨ Features
+## Use Cases
 
-* 📂 Upload files via presigned S3 URLs
-* 🔗 Generate temporary shareable links
-* 🗑️ Automatic file expiry
-* 🛡️ Secure storage using AWS S3
-* 🐳 Dockerized for easy deployment
+### Personal Use
 
----
+- Share photos and videos with family and friends
+- Send large documents that won't fit in email
+- Temporary file storage for personal projects
+- Quick file transfers between devices
 
-## 🛠 Tech Stack
+### Business Use
 
-* **Backend:** Express + Bun
-* **Database:** PostgreSQL + Prisma ORM
-* **Storage:** AWS S3
-* **Containerization:** Docker
-* **CI/CD:** GitHub Actions → Docker Hub → EC2
+- Share project files with clients
+- Distribute documents to team members
+- Send large presentations or reports
+- Temporary file hosting for meetings
 
----
+### Developer Use
 
-## 📦 Getting Started
+- Share code files and assets
+- Distribute software builds
+- Host temporary documentation
+- Share log files for debugging
 
-### 1. Clone the repository
+## Features
+
+- **Instant Upload**: Drag and drop or click to upload files
+- **Secure Links**: Files are accessible only via generated links
+- **Auto Expiry**: Files automatically expire for security
+- **Password Protection**: Add passwords to sensitive files
+- **QR Code Sharing**: Generate QR codes for easy mobile sharing
+- **Download Tracking**: See how many times files are downloaded
+- **Multiple Tiers**: Anonymous, Free, and Pro sharing options
+
+## Quick Start
+
+1. **Upload a file** by dragging it to the upload area
+2. **Get your share link** instantly
+3. **Share the link** with anyone who needs the file
+4. **Files expire automatically** based on your tier
+
+## Tiers
+
+### Anonymous
+
+- No registration required
+- Files expire in 24 hours
+- Up to 10MB file size
+- Basic sharing features
+
+### Free
+
+- Account required
+- Files expire in 7 days
+- Up to 100MB file size
+- Password protection available
+
+### Pro
+
+- Full features
+- Files expire in 30 days
+- Up to 1GB file size
+- Advanced analytics and customization
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ or Bun
+- PostgreSQL database
+- AWS S3 bucket
+
+### Installation
+
+1. Clone the repository
 
 ```bash
 git clone https://github.com/yourusername/candyshare.git
 cd candyshare
 ```
 
-### 2. Backend Setup
+2. Install dependencies
 
 ```bash
 cd backend
 bun install
 ```
 
-Set up your environment variables in `.env`:
+3. Set up environment variables
 
-```env
-DATABASE_URL="postgresql://postgres:password@localhost:5432/postgres"
-AWS_ACCESS_KEY_ID=your_access_key
-AWS_SECRET_ACCESS_KEY=your_secret_key
-AWS_REGION=your_region
-S3_BUCKET_NAME=your_bucket
+```bash
+cp .env.example .env
+# Edit .env with your database and AWS credentials
 ```
 
-Run migrations and generate the Prisma client:
+4. Run database migrations
 
 ```bash
 bun run db:generate
 ```
 
-Start the dev server:
+5. Start the development server
 
 ```bash
-bun index.ts
+bun run dev
 ```
 
-The backend runs at `http://localhost:4000`.
+The application will be available at `http://localhost:3000`.
 
----
+## Docker Deployment
 
-## 🐳 Docker
-
-### Build the Docker image
+Build and run with Docker:
 
 ```bash
-docker build -t candyshare -f docker/Dockerfile.server .
+docker build -t candyshare .
+docker run -p 3000:3000 candyshare
 ```
 
-### Run the container
+## Contributing
 
-```bash
-docker run -d -p 4000:4000 \
-  --name candy-share \
-  -e DATABASE_URL="postgresql://postgres:password@db:5432/postgres" \
-  -e AWS_ACCESS_KEY_ID=your_key \
-  -e AWS_SECRET_ACCESS_KEY=your_secret \
-  -e S3_BUCKET_NAME=your_bucket \
-  candyshare:latest
-```
+Contributions are welcome! Please feel free to submit a Pull Request.
 
----
+## License
 
-## 🚀 Deployment (CI/CD)
-
-* On **push to `main`**, GitHub Actions:
-
-  1. Builds the Docker image
-  2. Pushes it to Docker Hub
-  3. SSHs into your EC2 instance
-  4. Pulls the new image & restarts the container
-
----
-
-## 📂 Repository Structure
-
-```
-.
-├── backend/           # Express + Bun + Prisma backend
-├── frontend/          # (coming soon) React frontend
-├── docker/            
-│   └── Dockerfile.server
-└── .github/workflows/ # CI/CD pipeline
-```
-
----
-
-## 📝 TODO
-
-* [ ] Add file expiry/cleanup cron
-* [ ] Frontend file upload UI
-* [ ] User authentication (optional)
-
----
-
-## 🤝 Contributing
-
-Pull requests are welcome. For major changes, open an issue first to discuss what you’d like to change.
-
----
-
-## 📜 License
-
-MIT
+MIT License - see LICENSE file for details.
