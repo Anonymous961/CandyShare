@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { getFileUrl } from "@/lib/api";
 
 export default function Download() {
   const params = useParams<{ id: string }>();
@@ -17,27 +18,18 @@ export default function Download() {
   const [isPasswordChecking, setIsPasswordChecking] = useState(false); // ADD: password checking state
   const [passwordError, setPasswordError] = useState(""); // ADD: password error state
   const [countdown, setCountdown] = useState(5); // ADD: countdown timer
-  const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000";
-  
+
   // Initial check for password requirement
   useEffect(() => {
     let countdownInterval: NodeJS.Timeout;
-    
+
     const checkPasswordRequirement = async () => {
       setIsDownloading(true);
       try {
-        const res = await fetch(`${BACKEND_URL}/api/file/file-url/${params.id}`);
-        
-        if(res.status === 401){
-          setNeedsPassword(true);
-          setIsDownloading(false);
-          return;
-        }
+        const { url: downloadUrl } = await getFileUrl(params.id);
 
-        if (!res.ok) throw new Error("Failed to get file URL");
-        const { url: downloadUrl } = await res.json();
         if (!downloadUrl) throw new Error("No URL returned");
-        
+
         // Start countdown timer
         countdownInterval = setInterval(() => {
           setCountdown((prev) => {
@@ -51,45 +43,45 @@ export default function Download() {
           });
         }, 1000);
       } catch (err) {
+        console.error("Error:", err);
+        if (err instanceof Error && 'status' in err && (err as { status: number }).status === 401) {
+          setNeedsPassword(true);
+        }
         setIsDownloading(false);
-        console.error(err);
       }
     };
-    
+
     checkPasswordRequirement();
-    
+
     // Cleanup function
     return () => {
       if (countdownInterval) {
         clearInterval(countdownInterval);
       }
     };
-  }, [params.id, BACKEND_URL]);
+  }, [params.id]);
 
   // Handle password form submission
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password.trim()) return;
-    
+
     setIsPasswordChecking(true);
     setPasswordError("");
-    
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/file/file-url/${params.id}?password=${encodeURIComponent(password)}`);
-      
-      if (res.status === 401) {
-        setPasswordError("Incorrect password. Please try again.");
-        return;
-      }
 
-      if (!res.ok) throw new Error("Failed to get file URL");
-      const { url: downloadUrl } = await res.json();
+    try {
+      const { url: downloadUrl } = await getFileUrl(params.id, password);
+
       if (!downloadUrl) throw new Error("No URL returned");
-      
+
       // Trigger download
       window.location.href = downloadUrl;
     } catch (err) {
-      setPasswordError("An error occurred. Please try again.");
+      if (err instanceof Error && 'status' in err && (err as { status: number }).status === 401) {
+        setPasswordError("Incorrect password. Please try again.");
+      } else {
+        setPasswordError("An error occurred. Please try again.");
+      }
       console.error(err);
     } finally {
       setIsPasswordChecking(false);
@@ -100,7 +92,7 @@ export default function Download() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <Header />
-        
+
         <main className="container mx-auto px-4 py-16">
           <div className="max-w-md mx-auto">
             <Card className="shadow-lg">
@@ -117,7 +109,7 @@ export default function Download() {
                   This file is protected with a password. Please enter the password to download.
                 </CardDescription>
               </CardHeader>
-              
+
               <CardContent>
                 <form onSubmit={handlePasswordSubmit} className="space-y-6">
                   <div className="space-y-2">
@@ -133,11 +125,10 @@ export default function Download() {
                           setPassword(e.target.value);
                           setPasswordError("");
                         }}
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                          passwordError 
-                            ? 'border-red-300 bg-red-50 focus:ring-red-500' 
-                            : 'border-gray-300 focus:border-blue-500'
-                        }`}
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${passwordError
+                          ? 'border-red-300 bg-red-50 focus:ring-red-500'
+                          : 'border-gray-300 focus:border-blue-500'
+                          }`}
                         disabled={isPasswordChecking}
                         autoFocus
                       />
@@ -147,7 +138,7 @@ export default function Download() {
                         </div>
                       )}
                     </div>
-                    
+
                     {passwordError && (
                       <p className="text-red-600 text-sm flex items-center gap-2">
                         <Shield />
@@ -155,7 +146,7 @@ export default function Download() {
                       </p>
                     )}
                   </div>
-                  
+
                   <Button
                     type="submit"
                     disabled={!password.trim() || isPasswordChecking}
@@ -175,7 +166,7 @@ export default function Download() {
                     )}
                   </Button>
                 </form>
-                
+
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
                     <Shield />
@@ -184,7 +175,7 @@ export default function Download() {
                 </div>
               </CardContent>
             </Card>
-            
+
             <div className="mt-8 text-center">
               <Button
                 variant="outline"
@@ -197,7 +188,7 @@ export default function Download() {
             </div>
           </div>
         </main>
-        
+
         <Footer />
       </div>
     );
@@ -206,7 +197,7 @@ export default function Download() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <Header />
-      
+
       <main className="container mx-auto px-4 py-16">
         <div className="max-w-md mx-auto">
           <Card className="shadow-lg">
@@ -223,7 +214,7 @@ export default function Download() {
                       Preparing Your File
                     </h1>
                     <p className="text-gray-600">
-                    We&apos;re getting your file ready for download...
+                      We&apos;re getting your file ready for download...
                     </p>
                     <div className="flex items-center justify-center gap-2 mt-4">
                       <span className="text-sm text-gray-500">Download starts in:</span>
@@ -287,7 +278,7 @@ export default function Download() {
           </Card>
         </div>
       </main>
-      
+
     </div>
   );
 }

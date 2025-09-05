@@ -1,11 +1,11 @@
-import { User } from "next-auth"
+import { User, Session } from "next-auth"
 
 export interface ExtendedUser extends User {
     id: string
     tier?: string
 }
 
-export interface ExtendedSession {
+export interface ExtendedSession extends Session {
     user: ExtendedUser
 }
 
