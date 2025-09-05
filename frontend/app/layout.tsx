@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next";
+import { AuthProvider } from "@/contexts/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  
+
   // Open Graph
   openGraph: {
     title: "Candy Share - Instant Secure File Sharing",
@@ -70,7 +71,7 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  
+
   // Verification (add these when you set up search console)
   verification: {
     google: "your-google-search-console-verification-code", // Add when available
@@ -97,8 +98,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white`}
       >
-        {children}
-        <Analytics/>
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );

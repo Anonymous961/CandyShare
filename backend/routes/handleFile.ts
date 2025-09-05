@@ -7,6 +7,7 @@ import { TIERS } from "../config/tiers";
 import bcrypt from "bcrypt";
 
 const router = Router();
+const prisma = new PrismaClient();
 
 router.post("/upload-file", async (req, res) => {
     const { filename, size, type, tier = "anonymous", password } = req.body; // Use string default
@@ -14,6 +15,16 @@ router.post("/upload-file", async (req, res) => {
 
     if (!filename || !size || !type) {
         return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // If user is authenticated, get their tier from database
+    let userTier = tier;
+    if (userId) {
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { tier: true }
+        });
+        userTier = user?.tier || "FREE";
     }
 
     // Convert tier string to Prisma enum format
@@ -24,7 +35,10 @@ router.post("/upload-file", async (req, res) => {
     };
 
     const prismaTier = tierMapping[tier as keyof typeof tierMapping] || "ANONYMOUS";
-    const tierConfig = TIERS[tier as keyof typeof TIERS];
+
+    // Convert userTier to lowercase for TIERS lookup
+    const tierKey = userTier.toLowerCase() as keyof typeof TIERS;
+    const tierConfig = TIERS[tierKey];
 
     if (size > tierConfig.maxSize) {
         return res.status(400).json({
@@ -45,7 +59,7 @@ router.post("/upload-file", async (req, res) => {
     // Set expiry based on tier
     const expiresAt = new Date(Date.now() + tierConfig.expiryHours * 60 * 60 * 1000);
 
-    const prisma = new PrismaClient();
+
 
     const file = await prisma.file.create({
         data: {
@@ -71,7 +85,6 @@ router.post("/upload-file", async (req, res) => {
 router.get("/file-url/:id", async (req, res) => {
     const { id } = req.params;
     const { password } = req.query;
-    const prisma = new PrismaClient();
     const file = await prisma.file.findUnique({ where: { id } });
     if (!file) {
         return res.status(404).json({ error: "File not found" });

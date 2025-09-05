@@ -42,7 +42,7 @@ export default function WelcomeCard() {
           Upload your file and get a secure link to share with anyone
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {/* Hero Image */}
         <div className="flex justify-center">
@@ -51,6 +51,7 @@ export default function WelcomeCard() {
               src="/illustration/file4.png"
               alt="File sharing illustration"
               fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               className="object-contain"
               priority
             />

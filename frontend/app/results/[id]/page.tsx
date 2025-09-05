@@ -5,12 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Copy, 
-  Download, 
-  QrCode, 
-  Share2, 
-  CheckCircle2, 
+import {
+  Copy,
+  Download,
+  QrCode,
+  Share2,
+  CheckCircle2,
   ArrowLeft,
   Clock,
   Shield,
@@ -70,15 +70,15 @@ export default function ResultsPage() {
     const fetchFileData = async () => {
       setIsLoading(true);
       setError("");
-      
+
       try {
         // Wait a bit to ensure localStorage is available
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         // Try to get data from localStorage
         const storedData = localStorage.getItem(`file_${params.id}`);
         console.log("Stored data:", storedData); // Debug log
-        
+
         if (storedData) {
           const data = JSON.parse(storedData);
           console.log("Parsed data:", data); // Debug log
@@ -150,7 +150,7 @@ export default function ResultsPage() {
     const expiry = new Date(expiresAt);
     const now = new Date();
     const diffHours = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffHours < 1) {
       const diffMinutes = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60));
       return `${diffMinutes} minutes`;
@@ -287,7 +287,7 @@ export default function ResultsPage() {
                   )}
                 </Button>
               </div>
-              
+
               {/* Action Buttons */}
               <div className="flex flex-wrap gap-3">
                 <Button
@@ -377,9 +377,11 @@ export default function ResultsPage() {
                   {qrCodeUrl ? (
                     <div className="p-4 bg-white rounded-lg border-2 border-gray-200">
                       <Image
-                        src={qrCodeUrl} 
-                        alt="QR Code" 
+                        src={qrCodeUrl}
+                        alt="QR Code"
                         className="w-48 h-48"
+                        width={48}
+                        height={48}
                       />
                     </div>
                   ) : (
@@ -403,7 +405,7 @@ export default function ResultsPage() {
             </Card>
           </div>
 
-          
+
           {/* Copy Notification */}
           {copied && (
             <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg animate-in slide-in-from-right-5">
