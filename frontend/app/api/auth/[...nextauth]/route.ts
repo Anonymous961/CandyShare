@@ -24,17 +24,16 @@ const handler = NextAuth({
                 user: {
                     ...session.user,
                     id: user.id,
-                    tier: (user as ExtendedUser).tier || "FREE", // Default tier for now
+                    tier: (user as ExtendedUser).tier || "FREE",
                 },
             };
         },
-        // redirect: async ({ url, baseUrl }) => {
-        //     // Always redirect to home page after successful login
-        //     console.log("redirect is working")
-        //     if (url.startsWith("/")) return `${baseUrl}${url}`
-        //     else if (new URL(url).origin === baseUrl) return url
-        //     return baseUrl
-        // },
+        redirect: async ({ url, baseUrl }) => {
+            // Handle redirects properly for production
+            if (url.startsWith("/")) return `${baseUrl}${url}`
+            else if (new URL(url).origin === baseUrl) return url
+            return baseUrl
+        },
     },
     pages: {
         signIn: "/auth/signin",
