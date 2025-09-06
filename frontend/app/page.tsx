@@ -12,6 +12,12 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { uploadFile, validateFileSize, calculateExpiryTime } from "@/lib/api";
 
+type UploadError = Error & {
+  status?: number;
+  error?: string;
+  details?: unknown;
+}
+
 export default function Home() {
   const router = useRouter();
   const { data: session } = useSession();
@@ -149,16 +155,22 @@ export default function Home() {
         xhr.setRequestHeader("Content-Type", file.type);
         xhr.send(file);
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Upload failed", err);
       setIsUploading(false);
 
-      // Handle file size errors specifically
-      if (err.error === "FILE_TOO_LARGE" || err.message?.includes("File too large")) {
-        setFileSizeError(err.message || "File is too large for your current tier");
+      if (err instanceof Error) {
+        const uploadErr = err as UploadError;
+
+        // handle file size errors specifically
+        if (uploadErr.error === "FILE_TOO_LARGE" || uploadErr.message?.includes("File too large")) {
+          setFileSizeError(uploadErr.message || "File is too large for your current tier");
+        } else {
+
+          setFileSizeError(uploadErr.message || "Upload failed. Please try again.");
+        }
       } else {
-        // Handle other errors
-        setFileSizeError(err.message || "Upload failed. Please try again.");
+        setFileSizeError("Upload failed. Please try again.");
       }
     } finally {
       setIsUploading(false);

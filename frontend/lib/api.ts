@@ -115,7 +115,7 @@ export async function uploadFile(file: File, tier: string = "anonymous", passwor
         const error = new Error(errorData.message || `Upload failed: ${response.statusText}`) as Error & {
             status: number;
             error?: string;
-            details?: any;
+            details?: unknown;
         };
         error.status = response.status;
         error.error = errorData.error;
