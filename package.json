@@ -11,7 +11,7 @@
     "build:backend": "cd backend && bun run build",
     "build:frontend": "cd frontend && npm run build",
     "install:all": "cd backend && bun install && cd ../frontend && npm install",
-    "prepare": "is-ci || husky"
+    "prepare": "if [ -f .husky/pre-commit ]; then husky; fi"
   },
   "keywords": [],
   "workspaces": [
@@ -23,7 +23,6 @@
   "devDependencies": {
     "concurrently": "^9.2.1",
     "husky": "^9.1.7",
-    "is-ci": "^4.1.0",
     "lint-staged": "^16.1.6"
   }
 }
