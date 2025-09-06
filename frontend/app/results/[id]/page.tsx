@@ -21,6 +21,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import QRCode from "qrcode";
 import Image from "next/image";
+import { calculateExpiryTime } from "@/lib/api";
 
 interface FileData {
   id: string;
@@ -92,7 +93,7 @@ export default function ResultsPage() {
             size: 1024000, // 1MB default
             tier: "anonymous",
             hasPassword: false,
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            expiresAt: calculateExpiryTime("anonymous"),
             downloadCount: 0
           });
         }
@@ -106,7 +107,7 @@ export default function ResultsPage() {
           size: 1024000,
           tier: "anonymous",
           hasPassword: false,
-          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+          expiresAt: calculateExpiryTime("anonymous"),
           downloadCount: 0
         });
       } finally {

@@ -66,10 +66,16 @@ const handler = NextAuth({
                         const userData = await response.json();
                         session.user.id = userData.id;
                         session.user.tier = userData.tier;
+                    } else {
+                        console.warn('Failed to fetch fresh user data, using cached data');
+                        session.user.id = token.id;
+                        session.user.tier = token.tier;
                     }
                 }
             } catch (error) {
                 console.error('Error fetching user session:', error);
+                session.user.id = token.id;
+                session.user.tier = token.tier;
             }
 
             return session;

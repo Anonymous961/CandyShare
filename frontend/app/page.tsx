@@ -4,12 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import UploadSuccessAlert from "@/components/UploadSuccessAlert";
+import FileSizeErrorAlert from "@/components/FileSizeErrorAlert";
 import FileUploadCard from "@/components/FileUploadCard";
 import WelcomeCard from "@/components/WelcomeCard";
 import TierInfoSection from "@/components/TierInfoSection";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { uploadFile } from "@/lib/api";
+import { uploadFile, validateFileSize, calculateExpiryTime } from "@/lib/api";
 
 export default function Home() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function Home() {
   const [fileId, setFileId] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string>("");
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
+  const [fileSizeError, setFileSizeError] = useState<string | null>(null);
 
   // Auto-close success alert after 3 seconds
   useEffect(() => {
@@ -38,11 +40,41 @@ export default function Home() {
     setIsSuccess(false);
     setUploadSuccess(false);
     setProgress(0);
-    setFileSize((selectedFile.size / 1024).toFixed(2) + " KB");
+    setFileSizeError(null);
+
+    // Convert to appropriate unit
+    const sizeInMB = selectedFile.size / (1024 * 1024);
+    if (sizeInMB >= 1) {
+      setFileSize(sizeInMB.toFixed(2) + " MB");
+    } else {
+      setFileSize((selectedFile.size / 1024).toFixed(2) + " KB");
+    }
+  };
+
+  const scrollToPricing = () => {
+    const pricingSection = document.getElementById('pricing');
+    if (pricingSection) {
+      pricingSection.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
   };
 
   const handleUpload = async () => {
     if (!file) return;
+
+    // Clear any previous errors
+    setFileSizeError(null);
+
+    // Client-side validation first
+    const currentTier = session?.user?.tier?.toLowerCase() || "anonymous";
+    const validation = validateFileSize(file, currentTier);
+
+    if (!validation.isValid) {
+      setFileSizeError(validation.error || "File size validation failed");
+      return;
+    }
 
     setIsUploading(true);
     setProgress(0);
@@ -53,7 +85,7 @@ export default function Home() {
       // 1. Request presigned URL from backend using the new API utility
       const { url, key, fileId, tier } = await uploadFile(
         file,
-        session?.user?.tier?.toLowerCase() || "anonymous",
+        currentTier,
         ""
       );
 
@@ -87,7 +119,7 @@ export default function Home() {
               size: file.size,
               tier: tier || "anonymous",
               hasPassword: false,
-              expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+              expiresAt: calculateExpiryTime(tier || "anonymous"),
               downloadCount: 0
             };
 
@@ -117,9 +149,17 @@ export default function Home() {
         xhr.setRequestHeader("Content-Type", file.type);
         xhr.send(file);
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("Upload failed", err);
       setIsUploading(false);
+
+      // Handle file size errors specifically
+      if (err.error === "FILE_TOO_LARGE" || err.message?.includes("File too large")) {
+        setFileSizeError(err.message || "File is too large for your current tier");
+      } else {
+        // Handle other errors
+        setFileSizeError(err.message || "Upload failed. Please try again.");
+      }
     } finally {
       setIsUploading(false);
     }
@@ -144,6 +184,7 @@ export default function Home() {
                   isUploading={isUploading}
                   progress={progress}
                   uploadSuccess={uploadSuccess}
+                  tier={session?.user?.tier?.toLowerCase() || "anonymous"}
                 />
               </div>
 
@@ -163,6 +204,16 @@ export default function Home() {
       {isSuccess && (
         <UploadSuccessAlert onClose={() => setIsSuccess(false)} />
       )}
+
+      {/* File Size Error Alert */}
+      {fileSizeError && (
+        <FileSizeErrorAlert
+          error={fileSizeError}
+          onClose={() => setFileSizeError(null)}
+          onUpgrade={scrollToPricing}
+        />
+      )}
+
       <Footer />
     </div>
   );

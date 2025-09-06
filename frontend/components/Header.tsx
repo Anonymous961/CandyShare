@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogIn, Menu, X, LogOut, User } from "lucide-react";
 import { useState } from "react";
@@ -18,12 +19,24 @@ export default function Header() {
   // const session = null;
   // const status = "unauthenticated";
 
+  const scrollToPricing = () => {
+    const pricingSection = document.getElementById('pricing');
+    if (pricingSection) {
+      pricingSection.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+    // Close mobile menu if open
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
+          {/* Logo - Clickable to home */}
+          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="group relative w-10 h-10">
               <Image
                 alt="CandyShare Icon"
@@ -41,7 +54,7 @@ export default function Header() {
                 Secure file sharing
               </p>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
@@ -49,9 +62,12 @@ export default function Header() {
               <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
                 Features
               </a>
-              <a href="#pricing" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+              <button
+                onClick={scrollToPricing}
+                className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors cursor-pointer"
+              >
                 Pricing
-              </a>
+              </button>
               <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
                 Help
               </a>
@@ -116,9 +132,12 @@ export default function Header() {
               <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
                 Features
               </a>
-              <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+              <button
+                onClick={scrollToPricing}
+                className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors cursor-pointer text-left"
+              >
                 Pricing
-              </a>
+              </button>
               <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
                 Help
               </a>

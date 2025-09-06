@@ -10,7 +10,7 @@ export const TIERS = {
     },
     [TIER.FREE]: {
         maxSize: 200 * 1024 * 1024,
-        expiryHours: 24,
+        expiryHours: 168, // 7 days
         password: false,
     },
     [TIER.PRO]: {

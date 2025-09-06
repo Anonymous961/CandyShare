@@ -24,7 +24,7 @@ const tiers = [
     features: ["User account", "7 days expiry", "Password protection", "Better security"],
     color: "bg-blue-50 border-blue-200",
     textColor: "text-blue-700",
-    maxSize: "100MB",
+    maxSize: "200MB",
     price: "Free",
     popular: true
   },
@@ -36,16 +36,16 @@ const tiers = [
     features: ["User account", "30 days expiry", "Password protection", "Analytics", "Priority support"],
     color: "bg-purple-50 border-purple-200",
     textColor: "text-purple-700",
-    maxSize: "1GB",
+    maxSize: "2GB",
     price: "$9.99/month",
     popular: false
   }
 ];
 
 export default function TierInfoSection() {
-      return (
-      <section className="py-16 bg-white" id="pricing">
-        <div className="container mx-auto px-4">
+  return (
+    <section className="py-16 bg-white" id="pricing">
+      <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Choose Your Sharing Plan
@@ -59,8 +59,8 @@ export default function TierInfoSection() {
           {tiers.map((tier) => {
             const Icon = tier.icon;
             return (
-              <Card 
-                key={tier.id} 
+              <Card
+                key={tier.id}
                 className={`relative ${tier.color} ${tier.popular ? 'ring-2 ring-blue-500 ring-offset-2' : ''}`}
               >
                 {tier.popular && (
@@ -70,34 +70,34 @@ export default function TierInfoSection() {
                     </Badge>
                   </div>
                 )}
-                
+
                 <CardHeader className="text-center pb-4">
                   <div className="flex justify-center mb-4">
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center ${tier.color}`}>
                       <Icon className={`w-6 h-6 ${tier.textColor}`} />
                     </div>
                   </div>
-                  
+
                   <CardTitle className={`text-xl ${tier.textColor}`}>
                     {tier.name}
                   </CardTitle>
-                  
+
                   <CardDescription className="text-gray-600">
                     {tier.description}
                   </CardDescription>
-                  
+
                   <div className="mt-4">
                     <span className="text-3xl font-bold text-gray-900">{tier.price}</span>
                     {tier.price !== "Free" && (
                       <span className="text-gray-500 ml-1">/month</span>
                     )}
                   </div>
-                  
+
                   <Badge variant="outline" className="mt-2">
                     Up to {tier.maxSize}
                   </Badge>
                 </CardHeader>
-                
+
                 <CardContent className="pt-0">
                   <ul className="space-y-3 mb-6">
                     {tier.features.map((feature, index) => (
@@ -109,8 +109,8 @@ export default function TierInfoSection() {
                       </li>
                     ))}
                   </ul>
-                  
-                  <Button 
+
+                  <Button
                     className={`w-full ${tier.popular ? 'bg-blue-500 hover:bg-blue-600' : 'bg-gray-800 hover:bg-gray-900'}`}
                     variant={tier.popular ? "default" : "default"}
                   >

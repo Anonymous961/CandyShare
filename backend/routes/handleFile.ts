@@ -41,8 +41,19 @@ router.post("/upload-file", async (req, res) => {
     const tierConfig = TIERS[tierKey];
 
     if (size > tierConfig.maxSize) {
+        const maxSizeMB = Math.round(tierConfig.maxSize / (1024 * 1024));
+        const fileSizeMB = Math.round(size / (1024 * 1024));
+
         return res.status(400).json({
-            error: `File too large. Max size for ${tier} tier: ${tierConfig.maxSize / (1024 * 1024)}MB`
+            error: "FILE_TOO_LARGE",
+            message: `File too large. Your file is ${fileSizeMB}MB but the ${tier} tier limit is ${maxSizeMB}MB.`,
+            details: {
+                fileSize: size,
+                maxSize: tierConfig.maxSize,
+                tier: tier,
+                fileSizeMB: fileSizeMB,
+                maxSizeMB: maxSizeMB
+            }
         })
     }
 

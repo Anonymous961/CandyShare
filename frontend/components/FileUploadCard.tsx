@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { Upload, File, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getTierDisplayInfo } from "@/lib/api";
 
 interface FileUploadCardProps {
   onFileSelect: (file: File) => void;
@@ -14,6 +15,7 @@ interface FileUploadCardProps {
   isUploading: boolean;
   progress: number;
   uploadSuccess: boolean;
+  tier?: string;
 }
 
 export default function FileUploadCard({
@@ -22,7 +24,8 @@ export default function FileUploadCard({
   file,
   isUploading,
   progress,
-  uploadSuccess
+  uploadSuccess,
+  tier = "anonymous"
 }: FileUploadCardProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,7 +40,7 @@ export default function FileUploadCard({
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragOver(false);
-    
+
     const droppedFile = e.dataTransfer.files[0];
     if (droppedFile) {
       onFileSelect(droppedFile);
@@ -61,6 +64,8 @@ export default function FileUploadCard({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const tierInfo = getTierDisplayInfo(tier);
+
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
@@ -69,10 +74,10 @@ export default function FileUploadCard({
           Upload File
         </CardTitle>
         <CardDescription>
-          Choose a file to share securely with our anonymous tier
+          Choose a file to share securely with your {tierInfo.name} tier
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-4">
         {/* File Drop Zone */}
         <div
@@ -82,8 +87,8 @@ export default function FileUploadCard({
           onDragLeave={handleDragLeave}
           className={cn(
             "relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 cursor-pointer",
-            isDragOver 
-              ? "border-blue-500 bg-blue-50" 
+            isDragOver
+              ? "border-blue-500 bg-blue-50"
               : "border-gray-300 hover:border-gray-400 hover:bg-gray-50",
             isUploading && "opacity-50 cursor-not-allowed",
             uploadSuccess && "border-green-500 bg-green-50"
@@ -96,7 +101,7 @@ export default function FileUploadCard({
             className="hidden"
             disabled={isUploading}
           />
-          
+
           <div className="flex flex-col items-center gap-3">
             {uploadSuccess ? (
               <CheckCircle2 className="w-12 h-12 text-green-500" />
@@ -105,21 +110,21 @@ export default function FileUploadCard({
             ) : (
               <Upload className="w-12 h-12 text-gray-400" />
             )}
-            
+
             <div className="space-y-1">
               <p className="text-sm font-medium text-gray-900">
-                {uploadSuccess 
-                  ? "Upload Complete!" 
-                  : isUploading 
-                    ? "Uploading..." 
-                    : isDragOver 
-                      ? "Drop file here" 
+                {uploadSuccess
+                  ? "Upload Complete!"
+                  : isUploading
+                    ? "Uploading..."
+                    : isDragOver
+                      ? "Drop file here"
                       : "Click to upload or drag & drop"
                 }
               </p>
               <p className="text-xs text-gray-500">
-                {uploadSuccess 
-                  ? "Your file is ready to share" 
+                {uploadSuccess
+                  ? "Your file is ready to share"
                   : "Supports all file types"
                 }
               </p>
@@ -182,20 +187,20 @@ export default function FileUploadCard({
         <div className="text-center space-y-2 pt-2 border-t">
           <div className="flex justify-center gap-4 text-xs text-gray-500">
             <span className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-              Anonymous
+              <div className={`w-2 h-2 ${tierInfo.color} rounded-full`}></div>
+              {tierInfo.name}
             </span>
             <span className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-              24h Expiry
+              <div className={`w-2 h-2 ${tierInfo.color} rounded-full`}></div>
+              {tierInfo.expiry} Expiry
             </span>
             <span className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-              Up to 10MB
+              <div className={`w-2 h-2 ${tierInfo.color} rounded-full`}></div>
+              Up to {tierInfo.maxSize}
             </span>
           </div>
           <p className="text-xs text-gray-400">
-            No registration required • Secure & private
+            {tierInfo.description}
           </p>
         </div>
       </CardContent>
