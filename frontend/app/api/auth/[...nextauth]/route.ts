@@ -3,7 +3,7 @@ import GoogleProvider from "next-auth/providers/google"
 import GitHubProvider from "next-auth/providers/github"
 import { ExtendedUser } from "../../../../types/auth"
 
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:4000"
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"
 
 const handler = NextAuth({
     providers: [
