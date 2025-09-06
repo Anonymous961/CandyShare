@@ -1,6 +1,6 @@
 {
-  "frontend/**/*.{js,jsx,ts,tsx}": [
-    "cd frontend && eslint --fix",
-    "cd frontend && prettier --write"
-  ]
+    "frontend/**/*.{js,jsx,ts,tsx}": [
+        "bash -c 'cd frontend && npx eslint --fix'",
+        "bash -c 'cd frontend && npx prettier --write'"
+    ]
 }
