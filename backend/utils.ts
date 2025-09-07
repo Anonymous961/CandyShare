@@ -1,3 +1,4 @@
 export function isValidUserId(userId: string): boolean {
-    return userId.length === 24 && /^[0-9a-fA-F]+$/.test(userId);
+    // CUID format: 25 characters, starts with 'c', contains alphanumeric characters
+    return userId.length === 25 && userId.startsWith('c') && /^[0-9a-zA-Z]+$/.test(userId);
 }

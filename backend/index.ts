@@ -29,24 +29,17 @@ app.use(cors({
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: isProduction ? 100 : 1000,
-    message: "Too many request from this IP, please try again later",
+    max: isProduction ? 100 : 1000, // limit each IP to 100 requests per windowMs in production, 1000 in development
+    message: {
+        error: "Too many requests from this IP, please try again later.",
+    },
     standardHeaders: true,
-    legacyHeaders: false
-})
+    legacyHeaders: false,
+});
 
 app.use(limiter);
 
-app.use(express.json({
-    limit: '10mb', // Prevent large payload attacks
-    verify: (req, res, buf) => {
-        try {
-            JSON.parse(buf.toString());
-        } catch (e) {
-            throw new Error('Invalid JSON');
-        }
-    }
-}));
+app.use(express.json({ limit: '10mb' }));
 
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -77,35 +70,28 @@ app.get("/debug/env", (req, res) => {
     const envData = Object.keys(process.env).reduce<Record<string, string>>((acc, key) => {
         if (key.includes("AWS") || key.includes("DATABASE") || key.includes("SECRET")) {
             acc[key] = process.env[key] ? "SET" : "MISSSING";
-        } else {
-            acc[key] = process.env[key] || "NOT_SET";
         }
         return acc;
     }, {});
 
     res.json({
         environment: process.env.NODE_ENV || 'development',
-        node_version: process.version,
-        platform: process.platform,
-        ...envData
-    })
-})
-
-app.use((req: Request, res: Response) => {
-    res.status(404).json({
-        error: "Route not found",
-        path: req.originalUrl,
-        method: req.method,
+        port: PORT,
+        env: envData
     });
 });
 
+app.use((req: Request, res: Response) => {
+    res.status(404).json({ error: "Route not found" });
+});
+
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+    console.error("Error:", err);
+    res.status(500).json({ error: "Internal server error" });
+});
+
 app.listen(PORT, () => {
-    console.log(`
-        🚀 Candy Share API Server started!
-        📍 Environment: ${process.env.NODE_ENV || 'development'}
-        📍 Port: ${PORT}
-        📍 Health: http://localhost:${PORT}/health
-        📍 Status: http://localhost:${PORT}/status
-        📍 Time: ${new Date().toISOString()}
-          `);
-})
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/health`);
+});

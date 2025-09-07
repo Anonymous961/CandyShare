@@ -33,9 +33,15 @@ export const TIER_EXPIRY_HOURS = {
     pro: 720   // 30 days
 } as const;
 
-export function calculateExpiryTime(tier: string = "anonymous"): string {
+export function calculateExpiryTime(tier: string = "anonymous", customHours?: number): string {
     const tierKey = tier.toLowerCase() as keyof typeof TIER_EXPIRY_HOURS;
-    const expiryHours = TIER_EXPIRY_HOURS[tierKey] || TIER_EXPIRY_HOURS.anonymous;
+    let expiryHours: number = TIER_EXPIRY_HOURS[tierKey] || TIER_EXPIRY_HOURS.anonymous;
+
+    // For Pro users, use custom hours if provided
+    if (tier.toLowerCase() === "pro" && customHours) {
+        expiryHours = customHours;
+    }
+
     return new Date(Date.now() + expiryHours * 60 * 60 * 1000).toISOString();
 }
 
@@ -87,7 +93,13 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
     });
 }
 
-export async function uploadFile(file: File, tier: string = "anonymous", password: string = "") {
+export async function uploadFile(
+    file: File,
+    tier: string = "anonymous",
+    password: string = "",
+    customExpiryHours?: number,
+    onProgress?: (progress: number) => void
+) {
     const session = await getSession();
 
     const headers: Record<string, string> = {
@@ -98,6 +110,7 @@ export async function uploadFile(file: File, tier: string = "anonymous", passwor
         headers["x-user-id"] = session.user.id;
     }
 
+    // Step 1: Get presigned URL from backend
     const response = await fetch(`${BACKEND_URL}/api/file/upload-file`, {
         method: "POST",
         headers,
@@ -107,6 +120,7 @@ export async function uploadFile(file: File, tier: string = "anonymous", passwor
             type: file.type,
             tier,
             password,
+            customExpiryHours: tier.toLowerCase() === "pro" ? customExpiryHours : undefined,
         }),
     });
 
@@ -123,7 +137,46 @@ export async function uploadFile(file: File, tier: string = "anonymous", passwor
         throw error;
     }
 
-    return response.json();
+    const { url, key, fileId, tier: responseTier } = await response.json();
+    console.log("Backend response:", { url, key, fileId, tier: responseTier });
+
+    // Step 2: Upload file directly to S3 using presigned URL
+    try {
+        console.log("Starting S3 upload to:", url);
+        console.log("File details:", { name: file.name, size: file.size, type: file.type });
+
+        const uploadResponse = await fetch(url, {
+            method: "PUT",
+            body: file,
+            headers: {
+                "Content-Type": file.type,
+            },
+        });
+
+        console.log("S3 upload response:", {
+            status: uploadResponse.status,
+            statusText: uploadResponse.statusText,
+            ok: uploadResponse.ok
+        });
+
+        if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            console.error("S3 upload failed response:", errorText);
+            throw new Error(`S3 upload failed: ${uploadResponse.statusText} - ${errorText}`);
+        }
+
+        console.log("S3 upload successful!");
+
+        // Call progress callback if provided
+        if (onProgress) {
+            onProgress(100);
+        }
+
+        return { url: key, key, fileId, tier: responseTier };
+    } catch (error) {
+        console.error("S3 upload error:", error);
+        throw new Error(`Failed to upload file to S3: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
 }
 
 export async function getFileUrl(fileId: string, password?: string) {
@@ -163,10 +216,12 @@ export async function getUserFiles(page: number = 1, limit: number = 10) {
         throw new Error("User not authenticated");
     }
 
-    const response = await authenticatedFetch(`/api/auth/user/${session.user.id}/files?page=${page}&limit=${limit}`);
+    // Use the new /my-files endpoint which is more convenient
+    const response = await authenticatedFetch(`/api/auth/my-files?page=${page}&limit=${limit}`);
 
     if (!response.ok) {
-        throw new Error(`Failed to get user files: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to get user files: ${response.statusText}`);
     }
 
     return response.json();

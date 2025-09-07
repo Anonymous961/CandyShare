@@ -29,7 +29,14 @@ export default function Home() {
   const [fileSize, setFileSize] = useState<string>("");
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
   const [fileSizeError, setFileSizeError] = useState<string | null>(null);
-  const { userTier } = useAuth();
+  const { userTier, isAuthenticated, isLoading } = useAuth();
+
+  // Redirect all authenticated users to dashboard
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, isLoading, router]);
 
   // Auto-close success alert after 3 seconds
   useEffect(() => {
@@ -58,15 +65,6 @@ export default function Home() {
     }
   };
 
-  const scrollToPricing = () => {
-    const pricingSection = document.getElementById('pricing');
-    if (pricingSection) {
-      pricingSection.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
-    }
-  };
 
   const handleUpload = async () => {
     if (!file) return;
@@ -90,73 +88,48 @@ export default function Home() {
     setUploadSuccess(false);
 
     try {
-      // 1. Request presigned URL from backend using the new API utility
-      const { url, key, fileId, tier } = await uploadFile(
+      // Upload file using the updated API utility (handles both presigned URL and S3 upload)
+      const { key, fileId, tier } = await uploadFile(
         file,
         currentTier,
-        ""
+        "", // No password for anonymous/free users
+        24, // Default 24 hours for anonymous/free users
+        setProgress
       );
 
       console.log(key, tier, fileSize);
 
-      if (!url) {
+      if (!fileId) {
         setIsUploading(false);
-        console.error("No presigned URL returned");
+        console.error("No file ID returned");
         return;
       }
 
-      // 2. Upload file to presigned URL
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.upload.onprogress = (event) => {
-          if (event.lengthComputable) {
-            const percent = Math.round((event.loaded / event.total) * 100);
-            setProgress(percent);
-          }
-        };
-        xhr.onload = () => {
-          if (xhr.status === 200 || xhr.status === 204) {
-            setFileId(fileId);
-            setIsSuccess(true);
-            setUploadSuccess(true);
+      // Upload is complete, set success state
+      setFileId(fileId);
+      setIsSuccess(true);
+      setUploadSuccess(true);
 
-            // Store file data in localStorage for the results page
-            const fileData = {
-              id: fileId,
-              originalName: file.name,
-              size: file.size,
-              tier: tier || "anonymous",
-              hasPassword: false,
-              expiresAt: calculateExpiryTime(tier || "anonymous"),
-              downloadCount: 0
-            };
+      // Store file data in localStorage for the results page
+      const fileData = {
+        id: fileId,
+        originalName: file.name,
+        size: file.size,
+        tier: tier || "anonymous",
+        hasPassword: false, // No password for anonymous/free users
+        expiresAt: calculateExpiryTime(tier || "anonymous", 24), // Default 24 hours
+        downloadCount: 0
+      };
 
-            try {
-              localStorage.setItem(`file_${fileId}`, JSON.stringify(fileData));
-              console.log("File data stored:", fileData); // Debug log
-            } catch (err) {
-              console.error("Failed to store file data:", err);
-            }
+      try {
+        localStorage.setItem(`file_${fileId}`, JSON.stringify(fileData));
+        console.log("File data stored in main page:", fileData); // Debug log
+      } catch (err) {
+        console.error("Failed to store file data:", err);
+      }
 
-            // Redirect to results page after a short delay
-            // setTimeout(() => {
-            router.push(`/results/${fileId}`);
-            // }, 2000);
-
-            resolve();
-          } else {
-            console.error("Upload failed with status:", xhr.status);
-            reject(new Error("Upload failed"));
-          }
-        };
-        xhr.onerror = () => {
-          console.error("Upload failed");
-          reject(new Error("Upload failed"));
-        };
-        xhr.open("PUT", url);
-        xhr.setRequestHeader("Content-Type", file.type);
-        xhr.send(file);
-      });
+      // Redirect to results page
+      router.push(`/results/${fileId}`);
     } catch (err: unknown) {
       console.error("Upload failed", err);
       setIsUploading(false);
@@ -179,6 +152,19 @@ export default function Home() {
     }
   };
 
+  // Show loading while checking authentication and redirecting
+  if (isLoading || isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">
+            {isLoading ? "Loading..." : "Redirecting to dashboard..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -187,10 +173,10 @@ export default function Home() {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {!fileId ? (
-            // Upload Flow
+            // Simple Layout for Anonymous and Free Users
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Left Column - Upload */}
-              <div className="space-y-6">
+              <div>
                 <FileUploadCard
                   onFileSelect={handleFileSelect}
                   onUpload={handleUpload}
@@ -224,7 +210,6 @@ export default function Home() {
         <FileSizeErrorAlert
           error={fileSizeError}
           onClose={() => setFileSizeError(null)}
-          onUpgrade={scrollToPricing}
         />
       )}
 
@@ -232,4 +217,3 @@ export default function Home() {
     </div>
   );
 }
-// test comment

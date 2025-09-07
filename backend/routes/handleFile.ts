@@ -10,7 +10,7 @@ const router = Router();
 const prisma = new PrismaClient();
 
 router.post("/upload-file", async (req, res) => {
-    const { filename, size, type, tier = "anonymous", password } = req.body; // Use string default
+    const { filename, size, type, tier = "anonymous", password, customExpiryHours } = req.body; // Use string default
     const userId = req.headers["x-user-id"] as string | undefined;
 
     if (!filename || !size || !type) {
@@ -63,12 +63,30 @@ router.post("/upload-file", async (req, res) => {
         })
     }
 
-    // Generate a unique S3 key
-    const key = `uploads/${tier}/${Date.now()}_${filename}`;
+    // Generate a unique S3 key using the actual user tier
+    const key = `uploads/${userTier.toLowerCase()}/${Date.now()}_${filename}`;
     const url = await getSignedUrlFromBucket(key, type);
 
-    // Set expiry based on tier
-    const expiresAt = new Date(Date.now() + tierConfig.expiryHours * 60 * 60 * 1000);
+    // Set expiry based on tier and custom hours for Pro users
+    let expiryHours = tierConfig.expiryHours;
+
+    // For Pro users, validate and use custom expiry if provided
+    if (tierKey === "pro" && customExpiryHours) {
+        if (customExpiryHours < tierConfig.minExpiryHours || customExpiryHours > tierConfig.maxExpiryHours) {
+            return res.status(400).json({
+                error: "INVALID_EXPIRY_HOURS",
+                message: `Custom expiry must be between ${tierConfig.minExpiryHours} and ${tierConfig.maxExpiryHours} hours for Pro tier.`,
+                details: {
+                    provided: customExpiryHours,
+                    min: tierConfig.minExpiryHours,
+                    max: tierConfig.maxExpiryHours
+                }
+            });
+        }
+        expiryHours = customExpiryHours;
+    }
+
+    const expiresAt = new Date(Date.now() + expiryHours * 60 * 60 * 1000);
 
 
 
@@ -90,7 +108,7 @@ router.post("/upload-file", async (req, res) => {
         }
     });
 
-    res.json({ url, key, fileId: file.id, tier });
+    res.json({ url, key, fileId: file.id, tier: userTier.toLowerCase() });
 })
 
 router.get("/file-url/:id", async (req, res) => {

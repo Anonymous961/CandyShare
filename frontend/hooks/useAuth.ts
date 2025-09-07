@@ -1,5 +1,5 @@
-import { useSession } from "next-auth/react";
-import { useEffect } from "react";
+import { useSession, signOut as nextAuthSignOut } from "next-auth/react";
+import { useEffect, useCallback, useMemo } from "react";
 import { useAuthStore } from "@/store/authStore";
 
 export const useAuth = () => {
@@ -26,12 +26,25 @@ export const useAuth = () => {
         }
     }, [session, status, setUser, setLoading]);
 
-    return {
+    const handleLogout = useCallback(async () => {
+        try {
+            // Clear Zustand store first
+            logout();
+            // Then sign out from NextAuth
+            await nextAuthSignOut({ redirect: false });
+        } catch (error) {
+            console.error("Error during logout:", error);
+            // Even if NextAuth signOut fails, we've already cleared the local state
+        }
+    }, [logout]);
+
+
+    return useMemo(() => ({
         user,
         isAuthenticated,
         isLoading,
         userTier,
-        logout,
+        logout: handleLogout,
         updateTier,
-    };
+    }), [user, isAuthenticated, isLoading, userTier, handleLogout, updateTier]);
 };

@@ -42,9 +42,13 @@ const handler = NextAuth({
                 });
 
                 if (response.ok) {
-                    const userData = await response.json();
+                    const responseData = await response.json();
+                    const userData = responseData.user; // Backend returns { user: { id, email, name, image, tier } }
                     user.id = userData.id;
                     user.tier = userData.tier;
+                    console.log('SignIn callback - user data set:', { id: userData.id, tier: userData.tier });
+                } else {
+                    console.warn('SignIn callback - failed to get user data from backend');
                 }
             } catch (error) {
                 console.error('Error during sign in:', error);
@@ -53,12 +57,17 @@ const handler = NextAuth({
             return true;
         },
         async session({ session, token }) {
-            // Get user data from backend
+            console.log('Session callback - token:', { id: token.id, tier: token.tier });
+            console.log('Session callback - session before:', { id: session.user.id, tier: session.user.tier });
+
+            // Use the database ID from token.id (set during signIn)
             try {
-                if (token.sub) {
-                    const response = await fetch(`${BACKEND_URL}/api/auth/user/${token.sub}`, {
+                if (token.id) {
+                    console.log('Fetching user data for ID:', token.id);
+                    const response = await fetch(`${BACKEND_URL}/api/auth/user/${token.id}`, {
+                        method: 'GET',
                         headers: {
-                            'Authorization': `Bearer ${token.accessToken}`,
+                            'Content-Type': 'application/json',
                         },
                     });
 
@@ -66,11 +75,16 @@ const handler = NextAuth({
                         const userData = await response.json();
                         session.user.id = userData.id;
                         session.user.tier = userData.tier;
+                        console.log('Fresh user data fetched:', { id: userData.id, tier: userData.tier });
                     } else {
                         console.warn('Failed to fetch fresh user data, using cached data');
                         session.user.id = token.id;
                         session.user.tier = token.tier;
                     }
+                } else {
+                    console.warn('No token.id available, using session data');
+                    session.user.id = token.id;
+                    session.user.tier = token.tier;
                 }
             } catch (error) {
                 console.error('Error fetching user session:', error);
@@ -78,10 +92,12 @@ const handler = NextAuth({
                 session.user.tier = token.tier;
             }
 
+            console.log('Session callback - session after:', { id: session.user.id, tier: session.user.tier });
             return session;
         },
         async jwt({ token, user, account }) {
             if (user) {
+                console.log('JWT callback - user data:', { id: user.id, tier: (user as ExtendedUser).tier });
                 token.id = user.id;
                 token.tier = (user as ExtendedUser).tier;
             }
@@ -89,6 +105,7 @@ const handler = NextAuth({
                 token.accessToken = account.access_token;
                 token.refreshToken = account.refresh_token;
             }
+            console.log('JWT callback - final token:', { id: token.id, tier: token.tier });
             return token;
         },
         redirect: async ({ url, baseUrl }) => {
