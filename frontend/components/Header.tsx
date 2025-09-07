@@ -5,8 +5,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogIn, Menu, X, LogOut, User } from "lucide-react";
 import { useState } from "react";
-import { useSession, signIn, signOut } from "next-auth/react"
-import { ExtendedSession } from "@/types/auth"
+import { signIn } from "next-auth/react"
+import { useAuth } from "@/hooks/useAuth";
 
 // Temporary mock functions until NextAuth is properly installed
 // const useSession = () => ({ data: null, status: "unauthenticated" });
@@ -15,7 +15,8 @@ import { ExtendedSession } from "@/types/auth"
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { data: session, status } = useSession() as { data: ExtendedSession | null; status: string };
+  const { isAuthenticated, user, logout, isLoading } = useAuth();
+  // const { data: session, status } = useSession() as { data: ExtendedSession | null; status: string };
   // const session = null;
   // const status = "unauthenticated";
 
@@ -74,19 +75,19 @@ export default function Header() {
             </nav>
 
             {/* Authentication Section */}
-            {status === "loading" ? (
+            {isLoading ? (
               <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
-            ) : session ? (
+            ) : isAuthenticated ? (
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <User className="h-4 w-4 text-gray-600" />
-                  <span className="text-sm text-gray-700">{session.user?.name}</span>
+                  <span className="text-sm text-gray-700">{user?.name}</span>
                   <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                    {session.user?.tier || 'FREE'}
+                    {user?.tier || 'FREE'}
                   </span>
                 </div>
                 <Button
-                  onClick={() => signOut()}
+                  onClick={() => logout()}
                   variant="outline"
                   size="sm"
                   className="flex items-center gap-2"
@@ -144,19 +145,19 @@ export default function Header() {
 
               {/* Mobile Authentication Section */}
               <div className="pt-2">
-                {status === "loading" ? (
+                {isLoading ? (
                   <div className="w-full h-8 bg-gray-200 rounded animate-pulse" />
-                ) : session ? (
+                ) : isAuthenticated ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 p-2 bg-gray-50 rounded">
                       <User className="h-4 w-4 text-gray-600" />
-                      <span className="text-sm text-gray-700">{session.user?.name}</span>
+                      <span className="text-sm text-gray-700">{user?.name || user?.email}</span>
                       <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        {session.user?.tier || 'FREE'}
+                        {user?.tier?.toUpperCase() || 'FREE'}
                       </span>
                     </div>
                     <Button
-                      onClick={() => signOut()}
+                      onClick={() => logout()}
                       variant="outline"
                       size="sm"
                       className="w-full flex items-center justify-center gap-2"

@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import UploadSuccessAlert from "@/components/UploadSuccessAlert";
 import FileSizeErrorAlert from "@/components/FileSizeErrorAlert";
 import FileUploadCard from "@/components/FileUploadCard";
@@ -11,6 +10,7 @@ import TierInfoSection from "@/components/TierInfoSection";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { uploadFile, validateFileSize, calculateExpiryTime } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
 
 type UploadError = Error & {
   status?: number;
@@ -20,7 +20,7 @@ type UploadError = Error & {
 
 export default function Home() {
   const router = useRouter();
-  const { data: session } = useSession();
+  // const { data: session } = useSession();
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
@@ -29,6 +29,7 @@ export default function Home() {
   const [fileSize, setFileSize] = useState<string>("");
   const [uploadSuccess, setUploadSuccess] = useState<boolean>(false);
   const [fileSizeError, setFileSizeError] = useState<string | null>(null);
+  const { userTier } = useAuth();
 
   // Auto-close success alert after 3 seconds
   useEffect(() => {
@@ -74,7 +75,8 @@ export default function Home() {
     setFileSizeError(null);
 
     // Client-side validation first
-    const currentTier = session?.user?.tier?.toLowerCase() || "anonymous";
+    // const currentTier = session?.user?.tier?.toLowerCase() || "anonymous";
+    const currentTier = userTier || "anonymous";
     const validation = validateFileSize(file, currentTier);
 
     if (!validation.isValid) {
@@ -196,7 +198,7 @@ export default function Home() {
                   isUploading={isUploading}
                   progress={progress}
                   uploadSuccess={uploadSuccess}
-                  tier={session?.user?.tier?.toLowerCase() || "anonymous"}
+                  tier={userTier || "anonymous"}
                 />
               </div>
 

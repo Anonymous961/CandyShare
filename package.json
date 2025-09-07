@@ -13,10 +13,6 @@
     "install:all": "cd backend && bun install && cd ../frontend && npm install"
   },
   "keywords": [],
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
   "author": "anonymous961",
   "license": "ISC",
   "devDependencies": {
