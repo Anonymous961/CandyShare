@@ -10,6 +10,7 @@ import ExpiryTimeSelector from "@/components/ExpiryTimeSelector";
 import PasswordProtection from "@/components/PasswordProtection";
 import UserDashboard from "@/components/UserDashboard";
 import UpgradePrompt from "@/components/UpgradePrompt";
+import AnalyticsTab from "@/components/AnalyticsTab";
 import { uploadFile, validateFileSize, calculateExpiryTime } from "@/lib/api";
 import { useState } from "react";
 import { File, Upload, FolderOpen, BarChart3 } from "lucide-react";
@@ -260,36 +261,14 @@ export default function Dashboard() {
 
                         {/* Analytics Tab */}
                         <TabsContent value="analytics" className="space-y-6">
-                            <div className="bg-white rounded-xl shadow-lg p-6">
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                                    <BarChart3 className="w-6 h-6 text-purple-600" />
-                                    Analytics
-                                </h2>
-                                {userTier?.toLowerCase() === "pro" ? (
-                                    <div className="text-center py-12">
-                                        <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                                        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                                            Analytics Coming Soon
-                                        </h3>
-                                        <p className="text-gray-500 mb-6">
-                                            Track your file usage, downloads, and bandwidth with detailed analytics.
-                                        </p>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-                                            <div className="p-4 bg-gray-50 rounded-lg">
-                                                <div className="text-2xl font-bold text-purple-600 mb-1">0</div>
-                                                <div className="text-sm text-gray-600">Total Downloads</div>
-                                            </div>
-                                            <div className="p-4 bg-gray-50 rounded-lg">
-                                                <div className="text-2xl font-bold text-purple-600 mb-1">0</div>
-                                                <div className="text-sm text-gray-600">Files Uploaded</div>
-                                            </div>
-                                            <div className="p-4 bg-gray-50 rounded-lg">
-                                                <div className="text-2xl font-bold text-purple-600 mb-1">0 MB</div>
-                                                <div className="text-sm text-gray-600">Bandwidth Used</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
+                            {userTier?.toLowerCase() === "pro" ? (
+                                <AnalyticsTab isAuthenticated={isAuthenticated} />
+                            ) : (
+                                <div className="bg-white rounded-xl shadow-lg p-6">
+                                    <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                                        <BarChart3 className="w-6 h-6 text-purple-600" />
+                                        Analytics
+                                    </h2>
                                     <div className="space-y-4">
                                         <UpgradePrompt
                                             feature="Advanced Analytics"
@@ -307,8 +286,8 @@ export default function Dashboard() {
                                             </p>
                                         </div>
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </TabsContent>
                     </Tabs>
                 </div>

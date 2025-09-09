@@ -59,20 +59,22 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <nav className="flex items-center gap-6">
-              <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
-                Features
-              </a>
-              <button
-                onClick={scrollToPricing}
-                className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors cursor-pointer"
-              >
-                Pricing
-              </button>
-              <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
-                Help
-              </a>
-            </nav>
+            {!isAuthenticated && (
+              <nav className="flex items-center gap-6">
+                <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+                  Features
+                </a>
+                <button
+                  onClick={scrollToPricing}
+                  className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors cursor-pointer"
+                >
+                  Pricing
+                </button>
+                <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+                  Help
+                </a>
+              </nav>
+            )}
 
             {/* Authentication Section */}
             {isLoading ? (
@@ -130,18 +132,22 @@ export default function Header() {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-gray-200 py-4">
             <nav className="flex flex-col gap-4">
-              <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
-                Features
-              </a>
-              <button
-                onClick={scrollToPricing}
-                className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors cursor-pointer text-left"
-              >
-                Pricing
-              </button>
-              <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
-                Help
-              </a>
+              {!isAuthenticated && (
+                <>
+                  <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+                    Features
+                  </a>
+                  <button
+                    onClick={scrollToPricing}
+                    className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors cursor-pointer text-left"
+                  >
+                    Pricing
+                  </button>
+                  <a href="#" className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors">
+                    Help
+                  </a>
+                </>
+              )}
 
               {/* Mobile Authentication Section */}
               <div className="pt-2">

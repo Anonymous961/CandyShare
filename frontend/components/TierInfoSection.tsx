@@ -21,7 +21,7 @@ const tiers = [
     name: "Free",
     description: "Perfect for personal use",
     icon: Shield,
-    features: ["User account", "7 days expiry", "Password protection", "Better security"],
+    features: ["User account", "7 days expiry", "Better security"],
     color: "bg-blue-50 border-blue-200",
     textColor: "text-blue-700",
     maxSize: "200MB",
@@ -33,11 +33,11 @@ const tiers = [
     name: "Pro",
     description: "Advanced features for power users",
     icon: Lock,
-    features: ["User account", "30 days expiry", "Password protection", "Analytics", "Priority support"],
+    features: ["User account", "30 days adjustable expiry", "Password protection", "Analytics", "Priority support"],
     color: "bg-purple-50 border-purple-200",
     textColor: "text-purple-700",
     maxSize: "2GB",
-    price: "$9.99/month",
+    price: "$8.99",
     popular: false
   }
 ];

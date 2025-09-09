@@ -93,13 +93,21 @@ export async function authenticatedFetch(url: string, options: RequestInit = {})
     });
 }
 
+// Define the return type for uploadFile
+export interface UploadFileResult {
+    url: string;
+    key: string;
+    fileId: string;
+    tier: string;
+}
+
 export async function uploadFile(
     file: File,
     tier: string = "anonymous",
     password: string = "",
     customExpiryHours?: number,
     onProgress?: (progress: number) => void
-) {
+): Promise<UploadFileResult> {
     const session = await getSession();
 
     const headers: Record<string, string> = {
@@ -140,43 +148,45 @@ export async function uploadFile(
     const { url, key, fileId, tier: responseTier } = await response.json();
     console.log("Backend response:", { url, key, fileId, tier: responseTier });
 
-    // Step 2: Upload file directly to S3 using presigned URL
-    try {
-        console.log("Starting S3 upload to:", url);
-        console.log("File details:", { name: file.name, size: file.size, type: file.type });
+    // Step 2: Upload file directly to S3 using presigned URL with progress tracking
+    return new Promise<UploadFileResult>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
 
-        const uploadResponse = await fetch(url, {
-            method: "PUT",
-            body: file,
-            headers: {
-                "Content-Type": file.type,
-            },
+        // Track upload progress
+        xhr.upload.addEventListener('progress', (event) => {
+            if (event.lengthComputable && onProgress) {
+                const progress = Math.round((event.loaded / event.total) * 100);
+                onProgress(progress);
+            }
         });
 
-        console.log("S3 upload response:", {
-            status: uploadResponse.status,
-            statusText: uploadResponse.statusText,
-            ok: uploadResponse.ok
+        // Handle successful upload
+        xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                console.log("S3 upload successful!");
+                resolve({ url: key, key, fileId, tier: responseTier });
+            } else {
+                console.error("S3 upload failed:", xhr.status, xhr.statusText);
+                reject(new Error(`S3 upload failed: ${xhr.status} ${xhr.statusText}`));
+            }
         });
 
-        if (!uploadResponse.ok) {
-            const errorText = await uploadResponse.text();
-            console.error("S3 upload failed response:", errorText);
-            throw new Error(`S3 upload failed: ${uploadResponse.statusText} - ${errorText}`);
-        }
+        // Handle upload errors
+        xhr.addEventListener('error', () => {
+            console.error("S3 upload error:", xhr.statusText);
+            reject(new Error(`Failed to upload file to S3: ${xhr.statusText}`));
+        });
 
-        console.log("S3 upload successful!");
+        // Handle upload abort
+        xhr.addEventListener('abort', () => {
+            reject(new Error('Upload was aborted'));
+        });
 
-        // Call progress callback if provided
-        if (onProgress) {
-            onProgress(100);
-        }
-
-        return { url: key, key, fileId, tier: responseTier };
-    } catch (error) {
-        console.error("S3 upload error:", error);
-        throw new Error(`Failed to upload file to S3: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+        // Start the upload
+        xhr.open('PUT', url);
+        xhr.setRequestHeader('Content-Type', file.type);
+        xhr.send(file);
+    });
 }
 
 export async function getFileUrl(fileId: string, password?: string) {
@@ -222,6 +232,75 @@ export async function getUserFiles(page: number = 1, limit: number = 10) {
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `Failed to get user files: ${response.statusText}`);
+    }
+
+    return response.json();
+}
+
+// File management functions for Pro users
+export async function unlistFile(fileId: string) {
+    const response = await authenticatedFetch(`/api/file/unlist/${fileId}`, {
+        method: "PATCH",
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to unlist file: ${response.statusText}`);
+    }
+
+    return response.json();
+}
+
+export async function extendFileExpiry(fileId: string, additionalHours: number) {
+    const response = await authenticatedFetch(`/api/file/extend-expiry/${fileId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ additionalHours }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to extend file expiry: ${response.statusText}`);
+    }
+
+    return response.json();
+}
+
+export async function setFilePassword(fileId: string, password: string) {
+    const response = await authenticatedFetch(`/api/file/set-password/${fileId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ password }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to set file password: ${response.statusText}`);
+    }
+
+    return response.json();
+}
+
+export async function removeFilePassword(fileId: string) {
+    const response = await authenticatedFetch(`/api/file/remove-password/${fileId}`, {
+        method: "PATCH",
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to remove file password: ${response.statusText}`);
+    }
+
+    return response.json();
+}
+
+// Get user analytics
+export async function getUserAnalytics() {
+    const response = await authenticatedFetch(`/api/file/analytics`, {
+        method: "GET",
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `Failed to fetch analytics: ${response.statusText}`);
     }
 
     return response.json();

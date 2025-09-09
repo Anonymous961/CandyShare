@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, CheckCircle, Lock, Download as DownloadIcon, ArrowLeft, Shield } from "lucide-react";
+import { Loader2, CheckCircle, Lock, Download as DownloadIcon, ArrowLeft, Shield, EyeOff, AlertTriangle } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,8 @@ export default function Download() {
   const [isPasswordChecking, setIsPasswordChecking] = useState(false); // ADD: password checking state
   const [passwordError, setPasswordError] = useState(""); // ADD: password error state
   const [countdown, setCountdown] = useState(5); // ADD: countdown timer
+  const [fileUnavailable, setFileUnavailable] = useState(false); // ADD: file unavailable state
+  const [unavailableReason, setUnavailableReason] = useState(""); // ADD: reason for unavailability
 
   // Initial check for password requirement
   useEffect(() => {
@@ -44,8 +46,20 @@ export default function Download() {
         }, 1000);
       } catch (err) {
         console.error("Error:", err);
-        if (err instanceof Error && 'status' in err && (err as { status: number }).status === 401) {
-          setNeedsPassword(true);
+        if (err instanceof Error && 'status' in err) {
+          const status = (err as { status: number }).status;
+          if (status === 401) {
+            setNeedsPassword(true);
+          } else if (status === 410) {
+            setFileUnavailable(true);
+            setUnavailableReason("This file is no longer available. It may have been unlisted by the owner or has expired.");
+          } else if (status === 404) {
+            setFileUnavailable(true);
+            setUnavailableReason("File not found. The file may have been deleted or the link is invalid.");
+          }
+        } else {
+          setFileUnavailable(true);
+          setUnavailableReason("An error occurred while trying to access the file. Please try again later.");
         }
         setIsDownloading(false);
       }
@@ -87,6 +101,89 @@ export default function Download() {
       setIsPasswordChecking(false);
     }
   };
+
+  if (fileUnavailable) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <Header />
+
+        <main className="container mx-auto px-4 py-16">
+          <div className="max-w-md mx-auto">
+            <Card className="shadow-lg">
+              <CardHeader className="text-center">
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                    <EyeOff className="w-8 h-8 text-red-600" />
+                  </div>
+                </div>
+                <CardTitle className="text-2xl font-bold text-gray-900">
+                  File Not Available
+                </CardTitle>
+                <CardDescription className="text-gray-600">
+                  {unavailableReason}
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-6">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-red-800">
+                      <p className="font-medium mb-1">What happened?</p>
+                      <ul className="space-y-1 text-xs">
+                        <li>• The file owner may have unlisted this file</li>
+                        <li>• The file may have expired and been automatically removed</li>
+                        <li>• The file may have been deleted</li>
+                        <li>• The download link may be invalid or corrupted</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-blue-800 text-sm">
+                    <Shield />
+                    <span>All files on CandyShare are automatically secured and have expiration dates for your privacy</span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => router.push("/")}
+                    className="w-full h-12 text-base font-medium"
+                    size="lg"
+                  >
+                    <DownloadIcon className="w-5 h-5 mr-2" />
+                    Share Another File
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push("/")}
+                    className="w-full flex items-center gap-2"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back to Home
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="mt-8 text-center">
+              <p className="text-sm text-gray-500 mb-4">
+                Need help? Contact the file owner or try sharing a new file.
+              </p>
+              <div className="flex justify-center gap-4 text-xs text-gray-400">
+                <span>Secure • Private • Temporary</span>
+              </div>
+            </div>
+          </div>
+        </main>
+
+        <Footer />
+      </div>
+    );
+  }
 
   if (needsPassword) {
     return (

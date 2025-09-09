@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Clock, Download, RefreshCw, EyeOff, Calendar, Settings, MoreVertical } from "lucide-react";
+import { FileText, Clock, Download, RefreshCw, EyeOff, Calendar, Settings, MoreVertical, Lock, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { getUserFiles } from "@/lib/api";
+import { unlistFile, extendFileExpiry, setFilePassword, removeFilePassword } from "@/lib/api";
+import { ExtendExpiryModal, SetPasswordModal } from "./FileManagementModals";
+import { useUserFiles } from "@/hooks/useUserFiles";
 
 interface FileData {
     id: string;
@@ -18,6 +20,7 @@ interface FileData {
     tier: string;
     downloadCount: number;
     lastDownloadedAt: string | null;
+    password?: string | null;
 }
 
 interface UserDashboardProps {
@@ -26,84 +29,122 @@ interface UserDashboardProps {
 }
 
 export default function UserDashboard({ isAuthenticated }: UserDashboardProps) {
-    const [files, setFiles] = useState<FileData[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const hasFetched = useRef(false);
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [showAllFiles, setShowAllFiles] = useState(false);
+    const filesPerPage = 5;
 
-    const loadUserFiles = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            console.log("Loading user files...");
-            const data = await getUserFiles(1, 5); // Load first 5 files
-            console.log("User files data:", data);
-            setFiles(data.files || []);
-        } catch (err) {
-            console.error("Error loading user files:", err);
-            // For development/testing, show some mock data
-            if (process.env.NODE_ENV === 'development') {
-                console.log("Using mock data for development");
-                setFiles([
-                    {
-                        id: 'mock-1',
-                        originalName: 'sample-document.pdf',
-                        size: 1024000,
-                        uploadedAt: new Date().toISOString(),
-                        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                        status: 'active',
-                        tier: 'pro',
-                        downloadCount: 5,
-                        lastDownloadedAt: new Date().toISOString(),
-                    },
-                    {
-                        id: 'mock-2',
-                        originalName: 'presentation.pptx',
-                        size: 2048000,
-                        uploadedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-                        expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-                        status: 'active',
-                        tier: 'pro',
-                        downloadCount: 12,
-                        lastDownloadedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-                    }
-                ]);
-                setError(null);
-            } else {
-                setError(err instanceof Error ? err.message : "Failed to load files");
-            }
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    // Use the custom hook for data fetching
+    const { data: filesData, loading, error, refetch } = useUserFiles(
+        isAuthenticated,
+        currentPage,
+        showAllFiles ? 10 : filesPerPage
+    );
+
+    // Extract data from the hook
+    const files = useMemo(() => filesData?.files || [], [filesData?.files]);
+    const totalPages = filesData?.pagination?.pages || 1;
+    const totalFiles = filesData?.pagination?.total || 0;
+
+    // Modal states
+    const [extendExpiryModal, setExtendExpiryModal] = useState<{ isOpen: boolean; file: FileData | null }>({
+        isOpen: false,
+        file: null
+    });
+    const [setPasswordModal, setSetPasswordModal] = useState<{ isOpen: boolean; file: FileData | null }>({
+        isOpen: false,
+        file: null
+    });
+
+    // Update local state when files change (for file management operations)
+    const [localFiles, setLocalFiles] = useState<FileData[]>([]);
 
     useEffect(() => {
-        if (isAuthenticated && !hasFetched.current) {
-            hasFetched.current = true;
-            loadUserFiles();
-        } else if (!isAuthenticated) {
-            hasFetched.current = false;
-            setFiles([]);
-        }
-    }, [isAuthenticated, loadUserFiles]);
+        setLocalFiles(files);
+    }, [files]);
 
     // File management actions
-    const handleUnlistFile = useCallback((fileId: string) => {
-        console.log("Unlist file:", fileId);
-        // TODO: Implement unlist functionality
-        alert("Unlist functionality coming soon!");
+    const handleUnlistFile = useCallback(async (fileId: string) => {
+        if (!confirm("Are you sure you want to unlist this file? It will no longer be accessible via its share link.")) {
+            return;
+        }
+
+        try {
+            await unlistFile(fileId);
+            // Remove file from local state
+            setLocalFiles(prev => prev.filter(file => file.id !== fileId));
+            alert("File unlisted successfully!");
+        } catch (error) {
+            console.error("Error unlisting file:", error);
+            alert("Failed to unlist file. Please try again.");
+        }
     }, []);
 
-    const handleExtendExpiry = useCallback((fileId: string) => {
-        console.log("Extend expiry for file:", fileId);
-        // TODO: Implement extend expiry functionality
-        alert("Extend expiry functionality coming soon!");
+    const handleExtendExpiry = useCallback((file: FileData) => {
+        setExtendExpiryModal({ isOpen: true, file });
     }, []);
 
-    const handleSetPassword = useCallback((fileId: string) => {
-        console.log("Set password for file:", fileId);
-        // TODO: Implement set password functionality
-        alert("Set password functionality coming soon!");
+    const handleSetPassword = useCallback((file: FileData) => {
+        setSetPasswordModal({ isOpen: true, file });
+    }, []);
+
+    const handleExtendExpiryConfirm = useCallback(async (hours: number) => {
+        if (!extendExpiryModal.file) return;
+
+        try {
+            await extendFileExpiry(extendExpiryModal.file.id, hours);
+            // Update file in local state
+            setLocalFiles(prev => prev.map(file =>
+                file.id === extendExpiryModal.file!.id
+                    ? {
+                        ...file,
+                        expiresAt: new Date(new Date(file.expiresAt).getTime() + hours * 60 * 60 * 1000).toISOString()
+                    }
+                    : file
+            ));
+            alert("File expiry extended successfully!");
+        } catch (error) {
+            console.error("Error extending file expiry:", error);
+            alert("Failed to extend file expiry. Please try again.");
+        }
+    }, [extendExpiryModal.file]);
+
+    const handleSetPasswordConfirm = useCallback(async (password: string) => {
+        if (!setPasswordModal.file) return;
+
+        try {
+            if (password) {
+                await setFilePassword(setPasswordModal.file.id, password);
+                alert("Password set successfully!");
+            } else {
+                await removeFilePassword(setPasswordModal.file.id);
+                alert("Password removed successfully!");
+            }
+            // Update file in local state
+            setLocalFiles(prev => prev.map(file =>
+                file.id === setPasswordModal.file!.id
+                    ? { ...file, password: password || null }
+                    : file
+            ));
+        } catch (error) {
+            console.error("Error setting file password:", error);
+            alert("Failed to set password. Please try again.");
+        }
+    }, [setPasswordModal.file]);
+
+    // Pagination handlers
+    const handlePageChange = useCallback((page: number) => {
+        setCurrentPage(page);
+    }, []);
+
+    const handleViewAllFiles = useCallback(() => {
+        setShowAllFiles(true);
+        setCurrentPage(1);
+    }, []);
+
+    const handleBackToRecent = useCallback(() => {
+        setShowAllFiles(false);
+        setCurrentPage(1);
     }, []);
 
     const formatFileSize = useCallback((bytes: number) => {
@@ -150,22 +191,38 @@ export default function UserDashboard({ isAuthenticated }: UserDashboardProps) {
                     <div>
                         <CardTitle className="flex items-center gap-2">
                             <FileText className="h-5 w-5" />
-                            Recent Files
+                            {showAllFiles ? 'All Files' : 'Recent Files'}
                         </CardTitle>
                         <CardDescription>
-                            Your recently uploaded files and their status
+                            {showAllFiles
+                                ? `All your uploaded files (${totalFiles} total)`
+                                : 'Your recently uploaded files and their status'
+                            }
                         </CardDescription>
                     </div>
-                    <Button
-                        onClick={loadUserFiles}
-                        variant="outline"
-                        size="sm"
-                        disabled={loading}
-                        className="flex items-center gap-2"
-                    >
-                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                        Refresh
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        {showAllFiles && (
+                            <Button
+                                onClick={handleBackToRecent}
+                                variant="outline"
+                                size="sm"
+                                className="flex items-center gap-2"
+                            >
+                                <ArrowLeft className="h-4 w-4" />
+                                Back to Recent
+                            </Button>
+                        )}
+                        <Button
+                            onClick={refetch}
+                            variant="outline"
+                            size="sm"
+                            disabled={loading}
+                            className="flex items-center gap-2"
+                        >
+                            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                            Refresh
+                        </Button>
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
@@ -178,7 +235,7 @@ export default function UserDashboard({ isAuthenticated }: UserDashboardProps) {
                     <div className="text-center py-4">
                         <p className="text-sm text-red-600">{error}</p>
                         <Button
-                            onClick={loadUserFiles}
+                            onClick={refetch}
                             variant="outline"
                             size="sm"
                             className="mt-2"
@@ -186,7 +243,7 @@ export default function UserDashboard({ isAuthenticated }: UserDashboardProps) {
                             Try Again
                         </Button>
                     </div>
-                ) : files.length === 0 ? (
+                ) : localFiles.length === 0 ? (
                     <div className="text-center py-8">
                         <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                         <p className="text-gray-500 mb-2">No files uploaded yet</p>
@@ -194,7 +251,7 @@ export default function UserDashboard({ isAuthenticated }: UserDashboardProps) {
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {files.map((file) => (
+                        {localFiles.map((file) => (
                             <div key={file.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
                                 {/* Desktop Layout */}
                                 <div className="hidden sm:flex items-center justify-between p-4">
@@ -214,6 +271,12 @@ export default function UserDashboard({ isAuthenticated }: UserDashboardProps) {
                                                 <Badge className={`text-xs ${getStatusColor(file.status)}`}>
                                                     {file.status}
                                                 </Badge>
+                                                {file.password && (
+                                                    <Badge className="text-xs bg-yellow-100 text-yellow-800">
+                                                        <Lock className="h-3 w-3 mr-1" />
+                                                        Protected
+                                                    </Badge>
+                                                )}
                                             </div>
                                             <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
                                                 <div className="flex items-center gap-1">
@@ -249,13 +312,13 @@ export default function UserDashboard({ isAuthenticated }: UserDashboardProps) {
                                                     <EyeOff className="h-4 w-4 mr-2" />
                                                     Unlist File
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleExtendExpiry(file.id)}>
+                                                <DropdownMenuItem onClick={() => handleExtendExpiry(file)}>
                                                     <Calendar className="h-4 w-4 mr-2" />
                                                     Extend Expiry
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleSetPassword(file.id)}>
+                                                <DropdownMenuItem onClick={() => handleSetPassword(file)}>
                                                     <Settings className="h-4 w-4 mr-2" />
-                                                    Set Password
+                                                    {file.password ? "Update Password" : "Set Password"}
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -280,6 +343,12 @@ export default function UserDashboard({ isAuthenticated }: UserDashboardProps) {
                                                 <Badge className={`text-xs ${getStatusColor(file.status)}`}>
                                                     {file.status}
                                                 </Badge>
+                                                {file.password && (
+                                                    <Badge className="text-xs bg-yellow-100 text-yellow-800">
+                                                        <Lock className="h-3 w-3 mr-1" />
+                                                        Protected
+                                                    </Badge>
+                                                )}
                                             </div>
                                             <div className="space-y-1 text-xs text-gray-500">
                                                 <div className="flex items-center gap-1">
@@ -315,13 +384,13 @@ export default function UserDashboard({ isAuthenticated }: UserDashboardProps) {
                                                     <EyeOff className="h-4 w-4 mr-2" />
                                                     Unlist File
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleExtendExpiry(file.id)}>
+                                                <DropdownMenuItem onClick={() => handleExtendExpiry(file)}>
                                                     <Calendar className="h-4 w-4 mr-2" />
                                                     Extend Expiry
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleSetPassword(file.id)}>
+                                                <DropdownMenuItem onClick={() => handleSetPassword(file)}>
                                                     <Settings className="h-4 w-4 mr-2" />
-                                                    Set Password
+                                                    {file.password ? "Update Password" : "Set Password"}
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -329,16 +398,72 @@ export default function UserDashboard({ isAuthenticated }: UserDashboardProps) {
                                 </div>
                             </div>
                         ))}
-                        {files.length >= 5 && (
+                        {/* View All Files Button - only show in recent files view */}
+                        {!showAllFiles && totalFiles > filesPerPage && (
                             <div className="text-center pt-2">
-                                <Button variant="outline" size="sm">
-                                    View All Files
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleViewAllFiles}
+                                >
+                                    View All Files ({totalFiles})
                                 </Button>
+                            </div>
+                        )}
+
+                        {/* Pagination Controls - only show when there are multiple pages */}
+                        {showAllFiles && totalPages > 1 && (
+                            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1 || loading}
+                                        className="flex items-center gap-1"
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                        Previous
+                                    </Button>
+                                    <span className="text-sm text-gray-600">
+                                        Page {currentPage} of {totalPages}
+                                    </span>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages || loading}
+                                        className="flex items-center gap-1"
+                                    >
+                                        Next
+                                        <ChevronRight className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                    Showing {files.length} of {totalFiles} files
+                                </div>
                             </div>
                         )}
                     </div>
                 )}
             </CardContent>
+
+            {/* Modals */}
+            <ExtendExpiryModal
+                isOpen={extendExpiryModal.isOpen}
+                onClose={() => setExtendExpiryModal({ isOpen: false, file: null })}
+                onConfirm={handleExtendExpiryConfirm}
+                fileName={extendExpiryModal.file?.originalName || ""}
+                currentExpiry={extendExpiryModal.file?.expiresAt || ""}
+            />
+
+            <SetPasswordModal
+                isOpen={setPasswordModal.isOpen}
+                onClose={() => setSetPasswordModal({ isOpen: false, file: null })}
+                onConfirm={handleSetPasswordConfirm}
+                fileName={setPasswordModal.file?.originalName || ""}
+                hasPassword={!!setPasswordModal.file?.password}
+            />
         </Card>
     );
 }
