@@ -1,17 +1,18 @@
 # CandyShare
 
-A simple file-sharing platform that lets you upload files and generate secure temporary links for sharing. Perfect for quickly sharing files without the need for accounts or complex setup.
+A modern file-sharing platform that lets you upload files and generate secure temporary links for sharing. Perfect for quickly sharing files with advanced features and multiple tier options.
 
 ## What it does
 
 CandyShare allows you to:
 
-- **Upload files** of any type and size
+- **Upload files** with drag-and-drop interface
 - **Generate secure links** that expire automatically
-- **Share files instantly** with anyone via a simple URL
+- **Share files instantly** with anyone via a simple URL or QR code
 - **Protect sensitive files** with optional password protection
-- **Track downloads** and access patterns
-- **No registration required** - start sharing immediately
+- **Track downloads** and access patterns with detailed analytics
+- **Choose your tier** - Anonymous, Free, or Pro sharing options
+- **Manage files** with a comprehensive dashboard
 
 ## Use Cases
 
@@ -44,6 +45,10 @@ CandyShare allows you to:
 - **Password Protection**: Add passwords to sensitive files
 - **QR Code Sharing**: Generate QR codes for easy mobile sharing
 - **Download Tracking**: See how many times files are downloaded
+- **Analytics Dashboard**: Detailed insights into file usage and activity
+- **User Authentication**: Secure account management with NextAuth
+- **Payment Integration**: Pro tier subscription with Razorpay
+- **File Management**: Organize and manage your shared files
 - **Multiple Tiers**: Anonymous, Free, and Pro sharing options
 
 ## Quick Start
@@ -66,15 +71,18 @@ CandyShare allows you to:
 
 - Account required
 - Files expire in 7 days
-- Up to 100MB file size
+- Up to 200MB file size
 - Password protection available
+- Basic analytics
 
-### Pro
+### Pro ($8.99/month)
 
 - Full features
 - Files expire in 30 days
-- Up to 1GB file size
-- Advanced analytics and customization
+- Up to 2GB file size
+- Advanced analytics and insights
+- Priority support
+- Custom branding options
 
 ## Getting Started
 
@@ -83,6 +91,7 @@ CandyShare allows you to:
 - Node.js 18+ or Bun
 - PostgreSQL database
 - AWS S3 bucket
+- Razorpay account (for payments)
 
 ### Installation
 
@@ -93,30 +102,54 @@ git clone https://github.com/yourusername/candyshare.git
 cd candyshare
 ```
 
-2. Install dependencies
+2. Install backend dependencies
 
 ```bash
 cd backend
 bun install
 ```
 
-3. Set up environment variables
+3. Install frontend dependencies
 
+```bash
+cd ../frontend
+npm install
+```
+
+4. Set up environment variables
+
+**Backend (.env):**
 ```bash
 cp .env.example .env
-# Edit .env with your database and AWS credentials
+# Edit .env with your database, AWS, and Razorpay credentials
 ```
 
-4. Run database migrations
+**Frontend (.env.local):**
+```bash
+cp .env.example .env.local
+# Edit .env.local with your API endpoints
+```
+
+5. Run database migrations
 
 ```bash
+cd backend
 bun run db:generate
+bun run db:migrate
 ```
 
-5. Start the development server
+6. Start the development servers
 
+**Backend:**
 ```bash
+cd backend
 bun run dev
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm run dev
 ```
 
 The application will be available at `http://localhost:3000`.
@@ -126,9 +159,27 @@ The application will be available at `http://localhost:3000`.
 Build and run with Docker:
 
 ```bash
-docker build -t candyshare .
-docker run -p 3000:3000 candyshare
+docker build -f docker/Dockerfile.server -t candyshare .
+docker run -p 4000:4000 candyshare
 ```
+
+## Project Structure
+
+```
+CandyShare/
+├── backend/           # Bun + Prisma API server
+├── frontend/          # Next.js React application
+├── docker/            # Docker configuration
+└── README.md
+```
+
+## Legal Pages
+
+- [Privacy Policy](/privacy-policy)
+- [Terms & Conditions](/terms-conditions)
+- [Pricing Policy](/pricing-policy)
+- [Refund Policy](/refund-policy)
+- [Shipping Policy](/shipping-policy)
 
 ## Contributing
 

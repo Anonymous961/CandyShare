@@ -2,6 +2,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import cors from "cors"
 import handleFile from "./routes/handleFile";
 import authRoutes from "./routes/auth";
+import paymentRoutes from "./routes/payment";
 import morgan from "morgan";
 import { rateLimit } from "express-rate-limit";
 
@@ -56,6 +57,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 app.use("/api/file", handleFile);
 app.use("/api/auth", authRoutes);
+app.use("/api/payment", paymentRoutes);
 
 app.get('/health', (req, res) => {
     res.status(200).json({

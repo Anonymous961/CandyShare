@@ -20,15 +20,23 @@ export default function DailyActivityChart({ data }: DailyActivityChartProps) {
             ...data.map(d => Math.max(d.uploads, d.downloads))
         );
         const chartHeight = 200;
-        const barWidth = 40;
-        const spacing = 20;
+
+        // Calculate responsive bar width and spacing
+        const containerWidth = 400; // Approximate container width
+        const minBarWidth = 20;
+        const maxBarWidth = 50;
+        const spacing = 8;
+
+        // Calculate bar width based on data length to prevent overflow
+        const availableWidth = containerWidth - (data.length - 1) * spacing;
+        const calculatedBarWidth = Math.max(minBarWidth, Math.min(maxBarWidth, availableWidth / data.length));
 
         return {
             maxValue,
             chartHeight,
-            barWidth,
+            barWidth: calculatedBarWidth,
             spacing,
-            totalWidth: data.length * (barWidth + spacing) - spacing
+            totalWidth: data.length * (calculatedBarWidth + spacing) - spacing
         };
     }, [data]);
 
@@ -76,13 +84,13 @@ export default function DailyActivityChart({ data }: DailyActivityChartProps) {
                     </div>
 
                     {/* Bars */}
-                    <div className="relative h-full flex items-end gap-5">
+                    <div className="relative h-full flex items-end overflow-x-auto" style={{ gap: chartData.spacing }}>
                         {data.map((day) => {
                             const uploadHeight = (day.uploads / chartData.maxValue) * chartData.chartHeight;
                             const downloadHeight = (day.downloads / chartData.maxValue) * chartData.chartHeight;
 
                             return (
-                                <div key={day.date} className="flex flex-col items-center">
+                                <div key={day.date} className="flex flex-col items-center flex-shrink-0" style={{ width: chartData.barWidth * 2 + 4 }}>
                                     {/* Bars Container */}
                                     <div className="flex items-end gap-1 mb-2" style={{ height: chartData.chartHeight }}>
                                         {/* Uploads Bar */}
@@ -113,7 +121,7 @@ export default function DailyActivityChart({ data }: DailyActivityChartProps) {
                                         <div className="text-xs font-medium text-gray-900">
                                             {day.uploads + day.downloads}
                                         </div>
-                                        <div className="text-xs text-gray-500">
+                                        <div className="text-xs text-gray-500 whitespace-nowrap">
                                             {formatDate(day.date)}
                                         </div>
                                     </div>

@@ -198,24 +198,10 @@ export default function Dashboard() {
                                                     <UpgradePrompt
                                                         feature="Custom Expiry Time"
                                                         description="Set custom file expiration times up to 30 days"
-                                                        onUpgrade={() => {
-                                                            // Scroll to pricing section
-                                                            const pricingSection = document.getElementById('pricing');
-                                                            if (pricingSection) {
-                                                                pricingSection.scrollIntoView({ behavior: 'smooth' });
-                                                            }
-                                                        }}
                                                     />
                                                     <UpgradePrompt
                                                         feature="Password Protection"
                                                         description="Add password protection to your files"
-                                                        onUpgrade={() => {
-                                                            // Scroll to pricing section
-                                                            const pricingSection = document.getElementById('pricing');
-                                                            if (pricingSection) {
-                                                                pricingSection.scrollIntoView({ behavior: 'smooth' });
-                                                            }
-                                                        }}
                                                     />
                                                 </>
                                             )}
@@ -242,12 +228,6 @@ export default function Dashboard() {
                                         <UpgradePrompt
                                             feature="File Management"
                                             description="View, manage, and track all your uploaded files with advanced features"
-                                            onUpgrade={() => {
-                                                const pricingSection = document.getElementById('pricing');
-                                                if (pricingSection) {
-                                                    pricingSection.scrollIntoView({ behavior: 'smooth' });
-                                                }
-                                            }}
                                         />
                                         <div className="text-center py-8">
                                             <p className="text-gray-500 mb-4">
@@ -273,12 +253,6 @@ export default function Dashboard() {
                                         <UpgradePrompt
                                             feature="Advanced Analytics"
                                             description="Track downloads, bandwidth usage, and file performance with detailed insights"
-                                            onUpgrade={() => {
-                                                const pricingSection = document.getElementById('pricing');
-                                                if (pricingSection) {
-                                                    pricingSection.scrollIntoView({ behavior: 'smooth' });
-                                                }
-                                            }}
                                         />
                                         <div className="text-center py-8">
                                             <p className="text-gray-500 mb-4">

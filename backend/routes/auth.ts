@@ -228,11 +228,24 @@ router.patch("/user/:id/tier", async (req, res) => {
                 return res.status(400).json({ error: "Cannot downgrade tier" });
             }
 
-            // For Pro upgrades, require additional validation (payment, admin approval, etc.)
+            // For Pro upgrades, check for active subscription
             if (tier === "PRO" && authenticatedUser.tier !== "PRO") {
-                // TODO: Add payment verification or admin approval logic here
-                console.log(`User ${userId} attempting to upgrade to Pro tier in production`);
-                return res.status(402).json({ error: "Payment required for Pro upgrade" });
+                // Check if user has active Pro subscription
+                const activeSubscription = await prisma.subscription.findFirst({
+                    where: {
+                        userId,
+                        tier: "PRO",
+                        status: "ACTIVE",
+                        OR: [
+                            { endDate: null }, // No end date (ongoing)
+                            { endDate: { gt: new Date() } } // Not expired
+                        ]
+                    }
+                });
+
+                if (!activeSubscription) {
+                    return res.status(402).json({ error: "Active Pro subscription required" });
+                }
             }
         } else {
             // DEVELOPMENT MODE: Allow any tier updates for testing

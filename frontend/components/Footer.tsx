@@ -4,7 +4,7 @@ const Footer = () => {
   return (
     <footer className="bg-gray-50 border-t border-gray-200">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -93,23 +93,52 @@ const Footer = () => {
               </li>
             </ul>
           </div>
+
+          {/* Legal */}
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 mb-4">Legal</h4>
+            <ul className="space-y-3">
+              <li>
+                <a href="/privacy-policy" className="text-gray-600 hover:text-gray-900 text-sm transition-colors">
+                  Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a href="/terms-conditions" className="text-gray-600 hover:text-gray-900 text-sm transition-colors">
+                  Terms & Conditions
+                </a>
+              </li>
+              <li>
+                <a href="/pricing-policy" className="text-gray-600 hover:text-gray-900 text-sm transition-colors">
+                  Pricing Policy
+                </a>
+              </li>
+              <li>
+                <a href="/refund-policy" className="text-gray-600 hover:text-gray-900 text-sm transition-colors">
+                  Refund Policy
+                </a>
+              </li>
+              <li>
+                <a href="/shipping-policy" className="text-gray-600 hover:text-gray-900 text-sm transition-colors">
+                  Shipping Policy
+                </a>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        {/* Legal */}
+        {/* Copyright */}
         <div className="border-t border-gray-200 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600">
-              <a href="#" className="hover:text-gray-900 transition-colors">
+              <a href="/privacy-policy" className="hover:text-gray-900 transition-colors">
                 Privacy Policy
               </a>
-              <a href="#" className="hover:text-gray-900 transition-colors">
-                Terms of Service
+              <a href="/terms-conditions" className="hover:text-gray-900 transition-colors">
+                Terms & Conditions
               </a>
-              <a href="#" className="hover:text-gray-900 transition-colors">
-                Cookie Policy
-              </a>
-              <a href="#" className="hover:text-gray-900 transition-colors">
-                DMCA
+              <a href="/pricing-policy" className="hover:text-gray-900 transition-colors">
+                Pricing Policy
               </a>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">

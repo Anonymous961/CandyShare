@@ -32,7 +32,7 @@ const tiers = [
     features: ["User account", "7 days expiry", "Password protection"],
     color: "bg-blue-50 border-blue-300",
     textColor: "text-blue-700",
-    maxSize: "100MB"
+    maxSize: "200MB"
   },
   {
     id: "pro" as Tier,
@@ -42,14 +42,14 @@ const tiers = [
     features: ["User account", "30 days expiry", "Password protection", "Analytics"],
     color: "bg-purple-50 border-purple-300",
     textColor: "text-purple-700",
-    maxSize: "1GB"
+    maxSize: "2GB"
   }
 ];
 
-export default function TierSelector({ 
-  selectedTier, 
-  onTierChange, 
-  disabled = false 
+export default function TierSelector({
+  selectedTier,
+  onTierChange,
+  disabled = false
 }: TierSelectorProps) {
   return (
     <Card>
@@ -62,13 +62,13 @@ export default function TierSelector({
           Select the level of features you need
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent>
         <div className="grid grid-cols-1 gap-3">
           {tiers.map((tier) => {
             const Icon = tier.icon;
             const isSelected = selectedTier === tier.id;
-            
+
             return (
               <div
                 key={tier.id}
@@ -105,7 +105,7 @@ export default function TierSelector({
                       </ul>
                     </div>
                   </div>
-                  
+
                   {isSelected && (
                     <div className="flex-shrink-0">
                       <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">

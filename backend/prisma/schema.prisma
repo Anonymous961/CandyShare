@@ -20,6 +20,8 @@ model User {
   files         File[]
   accounts      Account[]
   sessions      Session[]
+  payments      Payment[]
+  subscriptions Subscription[]
 }
 
 model Account {
@@ -81,8 +83,70 @@ enum FileStatus {
   DELETED
 }
 
+model Payment {
+  id                    String            @id @default(cuid())
+  userId                String
+  razorpayPaymentId     String?
+  razorpayOrderId       String?
+  razorpaySubscriptionId String?
+  amount                Int
+  currency              String            @default("USD")
+  status                PaymentStatus     @default(PENDING)
+  tier                  TIER
+  subscriptionType      SubscriptionType  @default(ONE_TIME)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Subscription {
+  id                    String              @id @default(cuid())
+  userId                String
+  razorpaySubscriptionId String             @unique
+  tier                  TIER
+  status                SubscriptionStatus  @default(ACTIVE)
+  startDate             DateTime            @default(now())
+  endDate               DateTime?
+  nextBillingDate       DateTime?
+  amount                Int
+  currency              String              @default("USD")
+  billingCycle          BillingCycle        @default(MONTHLY)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 enum TIER {
   ANONYMOUS
   FREE
   PRO
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum SubscriptionType {
+  ONE_TIME
+  RECURRING
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
 }
