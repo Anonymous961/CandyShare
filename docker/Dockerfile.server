@@ -2,17 +2,22 @@ FROM oven/bun:1.1.13
 
 WORKDIR /app
 
-
+# Copy package files first for better caching
 COPY backend/package.json backend/bun.lock ./
 RUN bun install --frozen-lockfile
 
-# Copy source
-COPY backend/ ./
+# Copy Prisma schema and migrations
+COPY backend/prisma ./prisma/
 
-# Generate Prisma client (now schema is present)
+# Generate Prisma client (schema is now present)
 RUN bun run db:generate
 
+# Copy the rest of the source code
+COPY backend/ ./
+
+# Expose port
 EXPOSE 4000
 
+# Run migrations and start the server
 CMD ["sh", "-c", "bun run db:migrate:deploy && bun index.ts"]
 
