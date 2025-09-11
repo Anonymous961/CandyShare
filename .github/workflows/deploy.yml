@@ -25,6 +25,7 @@ jobs:
           file: ./docker/Dockerfile.server
           push: true
           tags: anonymous961/candyshare:latest # Replace with your Docker Hub username and repository
+          no-cache: true  # Add this line
 
       - name: Verify Pushed Image
         run: docker pull anonymous961/candyshare:latest # Replace with your Docker Hub username and repository
