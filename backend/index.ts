@@ -47,7 +47,7 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(morgan(isProduction ? 'combined' : 'dev', {
-    skip: (req, res) => req.path === '/health' // Skip health check logs
+    skip: (req, res) => req.path === '/health' || req.path === '/health/db'
 }));
 
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -72,86 +72,61 @@ app.get('/health', (req, res) => {
 
 // Database health check endpoint
 app.get('/health/db', async (req, res) => {
-    try {
-        // Check if all required tables exist and are accessible
-        const tables = [
-            'User',
-            'Account',
-            'Session',
-            'VerificationToken',
-            'File',
-            'Payment',
-            'Subscription'
-        ];
+    const startTime = Date.now();
+    console.log(`[${new Date().toISOString()}] Database health check requested`);
 
-        const tableChecks = await Promise.allSettled(
-            tables.map(async (table) => {
-                try {
-                    // Try to query each table to verify it exists and is accessible
-                    switch (table) {
-                        case 'User':
-                            await prisma.user.count();
-                            break;
-                        case 'Account':
-                            await prisma.account.count();
-                            break;
-                        case 'Session':
-                            await prisma.session.count();
-                            break;
-                        case 'VerificationToken':
-                            await prisma.verificationToken.count();
-                            break;
-                        case 'File':
-                            await prisma.file.count();
-                            break;
-                        case 'Payment':
-                            await prisma.payment.count();
-                            break;
-                        case 'Subscription':
-                            await prisma.subscription.count();
-                            break;
-                    }
-                    return { table, status: 'accessible' };
-                } catch (error) {
-                    return { table, status: 'error', error: error instanceof Error ? error.message : String(error) };
-                }
-            })
+    try {
+        console.log(`[${new Date().toISOString()}] Attempting to connect to database...`);
+
+        // Simple connection test with timeout
+        const connectPromise = prisma.$connect();
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Connection timeout')), 5000)
         );
 
-        const results = tableChecks.map((result, index) => {
-            if (result.status === 'fulfilled') {
-                return result.value;
-            } else {
-                return {
-                    table: tables[index],
-                    status: 'failed',
-                    error: result.reason instanceof Error ? result.reason.message : String(result.reason)
-                };
-            }
-        });
+        await Promise.race([connectPromise, timeoutPromise]);
+        console.log(`[${new Date().toISOString()}] Database connected successfully`);
 
-        const allTablesAccessible = results.every(r => r.status === 'accessible');
+        console.log(`[${new Date().toISOString()}] Testing User table query...`);
+        const userCount = await prisma.user.count();
+        console.log(`[${new Date().toISOString()}] User table accessible, count: ${userCount}`);
 
-        res.status(allTablesAccessible ? 200 : 503).json({
-            status: allTablesAccessible ? 'OK' : 'ERROR',
+        const responseTime = Date.now() - startTime;
+        console.log(`[${new Date().toISOString()}] Database health check completed in ${responseTime}ms`);
+
+        res.status(200).json({
+            status: 'OK',
             timestamp: new Date().toISOString(),
+            responseTime: `${responseTime}ms`,
             database: {
                 connected: true,
-                tables: results,
-                totalTables: tables.length,
-                accessibleTables: results.filter(r => r.status === 'accessible').length
+                message: 'Database connection successful',
+                userCount: userCount
             }
         });
     } catch (error) {
+        const responseTime = Date.now() - startTime;
+        console.error(`[${new Date().toISOString()}] Database health check failed after ${responseTime}ms:`, error);
+
         res.status(503).json({
             status: 'ERROR',
             timestamp: new Date().toISOString(),
+            responseTime: `${responseTime}ms`,
             database: {
                 connected: false,
                 error: error instanceof Error ? error.message : String(error)
             }
         });
     }
+});
+
+app.get('/health/simple', (req, res) => {
+    console.log('Simple health check requested');
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        message: 'Simple endpoint working'
+    });
 });
 
 app.get("/debug/env", (req, res) => {
