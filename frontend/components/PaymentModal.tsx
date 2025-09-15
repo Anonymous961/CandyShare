@@ -70,8 +70,9 @@ export default function PaymentModal({ isOpen, onClose, onSuccess, userId }: Pay
         setIsLoading(true);
 
         try {
+            const apiBaseUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:4000"
             // Create payment order
-            const orderResponse = await fetch("http://localhost:4000/api/payment/create-order", {
+            const orderResponse = await fetch(`${apiBaseUrl}/api/payment/create-order`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userId, tier: "PRO" }),
@@ -98,7 +99,7 @@ export default function PaymentModal({ isOpen, onClose, onSuccess, userId }: Pay
                     handler: async function (response: RazorpayResponse) {
                         try {
                             // Verify payment
-                            const verifyResponse = await fetch("http://localhost:4000/api/payment/verify-payment", {
+                            const verifyResponse = await fetch(`${apiBaseUrl}/api/payment/verify-payment`, {
                                 method: "POST",
                                 headers: { "Content-Type": "application/json" },
                                 body: JSON.stringify({
